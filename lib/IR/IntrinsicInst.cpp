@@ -138,6 +138,70 @@ ConstrainedFPIntrinsic::getExceptionBehavior() const {
     .Default(ebInvalid);
 }
 
+bool EVLIntrinsic::isUnaryOp() const {
+  switch (getIntrinsicID()) {
+    default:
+      return false;
+    case Intrinsic::evl_fneg:
+      return true;
+  }
+}
+
+Value*
+EVLIntrinsic::GetMask() const {
+  if (isBinaryOp()) { return getArgOperand(2); }
+  else if (isTernaryOp()) { return getArgOperand(3); }
+  else if (isUnaryOp()) { return getArgOperand(1); }
+  else return nullptr;
+}
+
+Value*
+EVLIntrinsic::GetVectorLength() const {
+  if (isBinaryOp()) { return getArgOperand(3); }
+  else if (isTernaryOp()) { return getArgOperand(4); }
+  else if (isUnaryOp()) { return getArgOperand(2); }
+  else return nullptr;
+}
+
+bool EVLIntrinsic::isBinaryOp() const {
+  switch (getIntrinsicID()) {
+    default:
+      return false;
+
+    case Intrinsic::evl_and:
+    case Intrinsic::evl_or:
+    case Intrinsic::evl_xor:
+    case Intrinsic::evl_ashr:
+    case Intrinsic::evl_lshr:
+    case Intrinsic::evl_shl:
+
+    case Intrinsic::evl_fadd:
+    case Intrinsic::evl_fsub:
+    case Intrinsic::evl_fmul:
+    case Intrinsic::evl_fdiv:
+    case Intrinsic::evl_frem:
+
+    case Intrinsic::evl_add:
+    case Intrinsic::evl_sub:
+    case Intrinsic::evl_mul:
+    case Intrinsic::evl_udiv:
+    case Intrinsic::evl_sdiv:
+    case Intrinsic::evl_urem:
+    case Intrinsic::evl_srem:
+      return true;
+  }
+}
+
+bool EVLIntrinsic::isTernaryOp() const {
+  switch (getIntrinsicID()) {
+    default:
+      return false;
+    case Intrinsic::evl_fma:
+    case Intrinsic::evl_select:
+      return true;
+  }
+}
+
 bool ConstrainedFPIntrinsic::isUnaryOp() const {
   switch (getIntrinsicID()) {
     default:

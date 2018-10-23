@@ -351,6 +351,11 @@ define void @f59() shadowcallstack
   ret void
 }
 
+; CHECK: define <8 x double> @f60(<8 x double> passthru, <8 x i1> mask, i32 vlen) {
+define <8 x double> @f60(<8 x double> passthru, <8 x i1> mask, i32 vlen) {
+  ret <8 x double> undef
+}
+
 ; CHECK: attributes #0 = { noreturn }
 ; CHECK: attributes #1 = { nounwind }
 ; CHECK: attributes #2 = { readnone }

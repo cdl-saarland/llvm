@@ -205,6 +205,73 @@ namespace llvm {
     /// @}
   };
 
+  class EVLIntrinsic : public IntrinsicInst {
+  public:
+
+    bool isUnaryOp() const;
+    bool isBinaryOp() const;
+    bool isTernaryOp() const;
+
+    Value* GetMask() const;
+    Value* GetVectorLength() const;
+
+    // Methods for support type inquiry through isa, cast, and dyn_cast:
+    static bool classof(const IntrinsicInst *I) {
+      switch (I->getIntrinsicID()) {
+      case Intrinsic::evl_and:
+      case Intrinsic::evl_or:
+      case Intrinsic::evl_xor:
+      case Intrinsic::evl_ashr:
+      case Intrinsic::evl_lshr:
+      case Intrinsic::evl_shl:
+
+      case Intrinsic::evl_select:
+      case Intrinsic::evl_compose:
+      case Intrinsic::evl_compress:
+      case Intrinsic::evl_expand:
+
+      case Intrinsic::evl_load:
+      case Intrinsic::evl_store:
+      case Intrinsic::evl_compressstore:
+      case Intrinsic::evl_expandload:
+
+      case Intrinsic::evl_fadd:
+      case Intrinsic::evl_fsub:
+      case Intrinsic::evl_fmul:
+      case Intrinsic::evl_fdiv:
+      case Intrinsic::evl_frem:
+      case Intrinsic::evl_fma:
+
+      case Intrinsic::evl_add:
+      case Intrinsic::evl_sub:
+      case Intrinsic::evl_mul:
+      case Intrinsic::evl_udiv:
+      case Intrinsic::evl_sdiv:
+      case Intrinsic::evl_urem:
+      case Intrinsic::evl_srem:
+
+      case Intrinsic::evl_reduce_and:
+      case Intrinsic::evl_reduce_or:
+      case Intrinsic::evl_reduce_xor:
+      case Intrinsic::evl_reduce_fadd:
+      case Intrinsic::evl_reduce_fmax:
+      case Intrinsic::evl_reduce_fmin:
+      case Intrinsic::evl_reduce_fmul:
+      case Intrinsic::evl_reduce_mul:
+      case Intrinsic::evl_reduce_umax:
+      case Intrinsic::evl_reduce_umin:
+      case Intrinsic::evl_reduce_smax:
+      case Intrinsic::evl_reduce_smin:
+        return true;
+
+      default: return false;
+      }
+    }
+    static bool classof(const Value *V) {
+      return isa<IntrinsicInst>(V) && classof(cast<IntrinsicInst>(V));
+    }
+  };
+
   /// This is the common base class for constrained floating point intrinsics.
   class ConstrainedFPIntrinsic : public IntrinsicInst {
   public:

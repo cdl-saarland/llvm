@@ -6095,6 +6095,55 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
   case Intrinsic::experimental_constrained_trunc:
     visitConstrainedFPIntrinsic(cast<ConstrainedFPIntrinsic>(I));
     return nullptr;
+
+  case Intrinsic::evl_and:
+  case Intrinsic::evl_or:
+  case Intrinsic::evl_xor:
+  case Intrinsic::evl_ashr:
+  case Intrinsic::evl_lshr:
+  case Intrinsic::evl_shl:
+
+  case Intrinsic::evl_select:
+  case Intrinsic::evl_compose:
+  case Intrinsic::evl_compress:
+  case Intrinsic::evl_expand:
+
+  case Intrinsic::evl_load:
+  case Intrinsic::evl_store:
+  case Intrinsic::evl_compressstore:
+  case Intrinsic::evl_expandload:
+
+  case Intrinsic::evl_fadd:
+  case Intrinsic::evl_fsub:
+  case Intrinsic::evl_fmul:
+  case Intrinsic::evl_fdiv:
+  case Intrinsic::evl_frem:
+  case Intrinsic::evl_fma:
+
+  case Intrinsic::evl_add:
+  case Intrinsic::evl_sub:
+  case Intrinsic::evl_mul:
+  case Intrinsic::evl_udiv:
+  case Intrinsic::evl_sdiv:
+  case Intrinsic::evl_urem:
+  case Intrinsic::evl_srem:
+
+  case Intrinsic::evl_reduce_and:
+  case Intrinsic::evl_reduce_or:
+  case Intrinsic::evl_reduce_xor:
+  case Intrinsic::evl_reduce_fadd:
+  case Intrinsic::evl_reduce_fmax:
+  case Intrinsic::evl_reduce_fmin:
+  case Intrinsic::evl_reduce_fmul:
+  case Intrinsic::evl_reduce_mul:
+  case Intrinsic::evl_reduce_umax:
+  case Intrinsic::evl_reduce_umin:
+  case Intrinsic::evl_reduce_smax:
+  case Intrinsic::evl_reduce_smin: {
+    visitExplicitVectorLengthIntrinsic(cast<EVLIntrinsic>(I));
+    return nullptr;
+  }
+
   case Intrinsic::fmuladd: {
     EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
     if (TM.Options.AllowFPOpFusion != FPOpFusion::Strict &&
@@ -6912,6 +6961,77 @@ void SelectionDAGBuilder::visitConstrainedFPIntrinsic(
   DAG.setRoot(OutChain);
   SDValue FPResult = Result.getValue(0);
   setValue(&FPI, FPResult);
+}
+
+void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
+    const EVLIntrinsic & EVLInst) {
+  SDLoc sdl = getCurSDLoc();
+  unsigned Opcode;
+  switch (EVLInst.getIntrinsicID()) {
+  default: llvm_unreachable("Impossible intrinsic");  // Can't reach here.
+  case Intrinsic::evl_add: Opcode = ISD::EVL_ADD; break;
+  case Intrinsic::evl_sub: Opcode = ISD::EVL_SUB; break;
+  case Intrinsic::evl_mul: Opcode = ISD::EVL_MUL; break;
+  case Intrinsic::evl_udiv: Opcode = ISD::EVL_UDIV; break;
+  case Intrinsic::evl_sdiv: Opcode = ISD::EVL_SDIV; break;
+  case Intrinsic::evl_urem: Opcode = ISD::EVL_UREM; break;
+  case Intrinsic::evl_srem: Opcode = ISD::EVL_SREM; break;
+
+  case Intrinsic::evl_and: Opcode = ISD::EVL_AND; break;
+  case Intrinsic::evl_or: Opcode = ISD::EVL_OR; break;
+  case Intrinsic::evl_xor: Opcode = ISD::EVL_XOR; break;
+
+  case Intrinsic::evl_fneg: Opcode = ISD::EVL_FNEG; break;
+  case Intrinsic::evl_fadd: Opcode = ISD::EVL_FADD; break;
+  case Intrinsic::evl_fsub: Opcode = ISD::EVL_FSUB; break;
+  case Intrinsic::evl_fmul: Opcode = ISD::EVL_FMUL; break;
+  case Intrinsic::evl_fdiv: Opcode = ISD::EVL_FDIV; break;
+  case Intrinsic::evl_frem: Opcode = ISD::EVL_FREM; break;
+  case Intrinsic::evl_fma: Opcode = ISD::EVL_FMA; break;
+  case Intrinsic::evl_compose: Opcode = ISD::EVL_COMPOSE; break;
+  }
+
+  const TargetLowering &TLI = DAG.getTargetLoweringInfo();
+  SDValue Chain = getRoot();
+  SmallVector<EVT, 4> ValueVTs;
+  ComputeValueVTs(TLI, DAG.getDataLayout(), EVLInst.getType(), ValueVTs);
+  ValueVTs.push_back(MVT::Other); // Out chain
+
+  SDVTList VTs = DAG.getVTList(ValueVTs);
+  SDValue Result;
+  switch (EVLInst.getNumArgOperands()) {
+    default:
+      llvm_unreachable("unexpected number of arguments to evl intrinsic");
+    case 3:
+    Result = DAG.getNode(Opcode, sdl, VTs,
+                         { Chain, getValue(EVLInst.getArgOperand(0)),
+                                  getValue(EVLInst.getArgOperand(1)),
+                                  getValue(EVLInst.getArgOperand(2)) });
+    break;
+
+    case 4:
+    Result = DAG.getNode(Opcode, sdl, VTs,
+                         { Chain, getValue(EVLInst.getArgOperand(0)),
+                                  getValue(EVLInst.getArgOperand(1)),
+                                  getValue(EVLInst.getArgOperand(2)),
+                                  getValue(EVLInst.getArgOperand(3)) });
+    break;
+
+    case 5:
+    Result = DAG.getNode(Opcode, sdl, VTs,
+                          { Chain, getValue(EVLInst.getArgOperand(0)),
+                                   getValue(EVLInst.getArgOperand(1)),
+                                   getValue(EVLInst.getArgOperand(2)),
+                                   getValue(EVLInst.getArgOperand(3)),
+                                   getValue(EVLInst.getArgOperand(4)) });
+    break;
+  }
+
+  assert(Result.getNode()->getNumValues() == 2);
+  SDValue OutChain = Result.getValue(1);
+  DAG.setRoot(OutChain);
+  SDValue EVLResult = Result.getValue(0);
+  setValue(&EVLInst, EVLResult);
 }
 
 std::pair<SDValue, SDValue>
