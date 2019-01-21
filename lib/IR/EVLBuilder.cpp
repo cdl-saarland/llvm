@@ -184,8 +184,25 @@ EVLBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
       return Builder.CreateCall(Func, Args);
     }
 
-    // case Instruction::Select:
-    //   llvm_unreachable("TODO implement");
+     case Instruction::Select: {
+      assert(VecOpArray.size() == 2);
+      Value & MaskOp = *VecOpArray[0];
+      Value & OnTrueOp = *VecOpArray[1];
+      Value & OnFalseOp = *VecOpArray[2];
+
+      // Fetch the EVL intrinsic
+      auto & VecTy = cast<VectorType>(*OnTrueOp.getType());
+      auto & ScalarTy = *VecTy.getVectorElementType();
+
+      auto * Func = Intrinsic::getDeclaration(&getModule(), evlDesc.ID, EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
+
+      assert((evlDesc.MaskPos == 2) && (evlDesc.EVLPos == 3));
+
+      // Materialize the Call
+      ShortValueVec Args{&OnTrueOp, &OnFalseOp, &MaskOp, &GetEVLForType(VecTy)};
+
+      return Builder.CreateCall(Func, Args);
+    }
   }
 }
 
@@ -203,16 +220,12 @@ EVLBuilder::CreateContiguousStore(Value & Val, Value & Pointer) {
 }
 
 Value&
-EVLBuilder::CreateContiguousLoad(Value & Pointer, Value * Passthru) {
+EVLBuilder::CreateContiguousLoad(Value & Pointer) {
   auto & PointerTy = cast<PointerType>(*Pointer.getType());
   auto & VecTy = getVectorType(*PointerTy.getPointerElementType());
 
   auto * LoadFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_load, {&VecTy, &PointerTy});
-  if (!Passthru) {
-    Passthru = UndefValue::get(&VecTy);
-  }
-
-  ShortValueVec Args{&Pointer, Passthru, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
+  ShortValueVec Args{&Pointer, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
   return *Builder.CreateCall(LoadFunc, Args);
 }
 
@@ -225,16 +238,13 @@ EVLBuilder::CreateScatter(Value & Val, Value & PointerVec) {
 }
 
 Value&
-EVLBuilder::CreateGather(Value & PointerVec, Value * Passthru) {
+EVLBuilder::CreateGather(Value & PointerVec) {
   auto & PointerVecTy = cast<VectorType>(*PointerVec.getType());
   auto & ElemTy = *cast<PointerType>(*PointerVecTy.getVectorElementType()).getPointerElementType();
   auto & VecTy = *VectorType::get(&ElemTy, PointerVecTy.getNumElements());
   auto * GatherFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_gather, {&VecTy, &PointerVecTy});
 
-  if (!Passthru) {
-    Passthru = UndefValue::get(&VecTy);
-  }
-  ShortValueVec Args{&PointerVec, Passthru, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
+  ShortValueVec Args{&PointerVec, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
   return *Builder.CreateCall(GatherFunc, Args);
 }
 

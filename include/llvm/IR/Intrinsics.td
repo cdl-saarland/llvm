@@ -1053,17 +1053,15 @@ def int_evl_store : Intrinsic<[],
 
 def int_evl_load  : Intrinsic<[ llvm_anyvector_ty],
                               [ LLVMAnyPointerType<LLVMMatchType<0>>,
-                                LLVMMatchType<0>,
                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
-                              [ IntrReadMem, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
+                              [ IntrReadMem, IntrArgMemOnly, Mask<1>, VectorLength<2> ]>;
 
 def int_evl_gather: Intrinsic<[ llvm_anyvector_ty],
                               [ LLVMVectorOfAnyPointersToElt<0>,
-                                LLVMMatchType<0>,
                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
-                              [ IntrReadMem, IntrReadMem, Mask<2>, VectorLength<3> ]>;
+                              [ IntrReadMem, IntrReadMem, Mask<1>, VectorLength<2> ]>;
 
 def int_evl_scatter: Intrinsic<[],
                                [ llvm_anyvector_ty,
@@ -1074,10 +1072,9 @@ def int_evl_scatter: Intrinsic<[],
 
 def int_evl_expandload: Intrinsic<[ llvm_anyvector_ty],
                                   [ LLVMPointerToElt<0>,
-                                    LLVMMatchType<0>,
                                     LLVMVectorSameWidth<0, llvm_i1_ty>,
                                     llvm_i32_ty],
-                                  [ IntrReadMem, Mask<2>, VectorLength<3> ]>;
+                                  [ IntrReadMem, Mask<1>, VectorLength<2> ]>;
 
 def int_evl_compressstore: Intrinsic<[],
                                      [ llvm_anyvector_ty,
@@ -1298,7 +1295,7 @@ def int_evl_select : Intrinsic<[ llvm_anyvector_ty ],
                                  LLVMMatchType<0>,
                                  LLVMVectorSameWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty],
-                               [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
+                               [ IntrNoMem, Passthru<1>, Mask<2>, VectorLength<3> ]>;
 
 // Compose
 def int_evl_compose : Intrinsic<[ llvm_anyvector_ty ],

@@ -71,13 +71,11 @@ public:
   Value& CreateFMul(ValArray VecOpArray);
   Value& CreateFSub(ValArray VecOpArray);
 
+  // Memory
   Value& CreateContiguousStore(Value & Val, Value & Pointer);
-
-  Value& CreateContiguousLoad(Value & Pointer, Value * Passthru = nullptr);
-
+  Value& CreateContiguousLoad(Value & Pointer);
   Value& CreateScatter(Value & Val, Value & PointerVec);
-
-  Value& CreateGather(Value & PointerVec, Value * Passthru = nullptr);
+  Value& CreateGather(Value & PointerVec);
 };
 
 
