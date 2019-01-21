@@ -99,7 +99,7 @@ class VectorLength<int argNo> : IntrinsicProperty {
 }
 
 // Mask - The specified argument contains the per-lane mask of this
-// intrinsic. Inputs on masked-out lanes must not effect the result of this
+// intrinsic. Inputs on masked-out lanes must not affect the result of this
 // intrinsic (except for the Passthru argument).
 class Mask<int argNo> : IntrinsicProperty {
   int ArgNo = argNo;
@@ -1044,46 +1044,47 @@ def int_is_constant : Intrinsic<[llvm_i1_ty], [llvm_any_ty], [IntrNoMem], "llvm.
 //===---------------- Masked/Explicit Vector Length Intrinsics --------------===//
 
 // Memory Intrinsics
-def int_evl_store : Intrinsic<[], [llvm_anyvector_ty,
-                                   LLVMAnyPointerType<LLVMMatchType<0>>,
-                                   LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                   llvm_i32_ty],
-                                 [IntrArgMemOnly, Mask<2>, VectorLength<3>]>;
+def int_evl_store : Intrinsic<[],
+                              [ llvm_anyvector_ty,
+                                LLVMAnyPointerType<LLVMMatchType<0>>,
+                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                llvm_i32_ty],
+                              [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
-def int_evl_load  : Intrinsic<[llvm_anyvector_ty],
-                                 [LLVMAnyPointerType<LLVMMatchType<0>>,
-                                  LLVMMatchType<0>,
-                                  LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                  llvm_i32_ty],
-                                 [IntrReadMem, IntrArgMemOnly, Mask<2>, VectorLength<3>]>;
+def int_evl_load  : Intrinsic<[ llvm_anyvector_ty],
+                              [ LLVMAnyPointerType<LLVMMatchType<0>>,
+                                LLVMMatchType<0>,
+                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                llvm_i32_ty],
+                              [ IntrReadMem, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
-def int_evl_gather: Intrinsic<[llvm_anyvector_ty],
-                                 [LLVMVectorOfAnyPointersToElt<0>,
-                                  LLVMMatchType<0>,
-                                  LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                  llvm_i32_ty],
-                                 [IntrReadMem, Mask<2>, VectorLength<3>]>;
+def int_evl_gather: Intrinsic<[ llvm_anyvector_ty],
+                              [ LLVMVectorOfAnyPointersToElt<0>,
+                                LLVMMatchType<0>,
+                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                llvm_i32_ty],
+                              [ IntrReadMem, IntrReadMem, Mask<2>, VectorLength<3> ]>;
 
 def int_evl_scatter: Intrinsic<[],
-                                  [llvm_anyvector_ty,
-                                   LLVMVectorOfAnyPointersToElt<0>,
-                                   LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                   llvm_i32_ty],
-                                  [Mask<2>, VectorLength<3>]>;
+                               [ llvm_anyvector_ty,
+                                 LLVMVectorOfAnyPointersToElt<0>,
+                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 llvm_i32_ty],
+                               [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
-def int_evl_expandload: Intrinsic<[llvm_anyvector_ty],
-                                     [LLVMPointerToElt<0>,
-                                      LLVMMatchType<0>,
-                                      LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                      llvm_i32_ty],
-                                     [IntrReadMem, Mask<2>, VectorLength<3>]>;
+def int_evl_expandload: Intrinsic<[ llvm_anyvector_ty],
+                                  [ LLVMPointerToElt<0>,
+                                    LLVMMatchType<0>,
+                                    LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                    llvm_i32_ty],
+                                  [ IntrReadMem, Mask<2>, VectorLength<3> ]>;
 
 def int_evl_compressstore: Intrinsic<[],
-                                     [llvm_anyvector_ty,
-                                      LLVMPointerToElt<0>,
-                                      LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                      llvm_i32_ty],
-                                     [IntrArgMemOnly, Mask<2>, VectorLength<3>]>;
+                                     [ llvm_anyvector_ty,
+                                       LLVMPointerToElt<0>,
+                                       LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                       llvm_i32_ty],
+                                     [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
 // Reductions
 def int_evl_reduce_fadd : Intrinsic<[llvm_anyfloat_ty],
@@ -1166,11 +1167,11 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
                                 LLVMMatchType<0>,
                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty]>;
-  def int_evl_mul : Intrinsic<[ llvm_anyvector_ty ],
-                              [ LLVMMatchType<0>,
-                                LLVMMatchType<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                llvm_i32_ty]>;
+  def int_evl_mul  : Intrinsic<[ llvm_anyvector_ty ],
+                               [ LLVMMatchType<0>,
+                                 LLVMMatchType<0>,
+                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 llvm_i32_ty]>;
   def int_evl_sdiv : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
@@ -1192,10 +1193,6 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
                                  LLVMVectorSameWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
 
-  def int_evl_fneg : Intrinsic<[ llvm_anyvector_ty ],
-                               [ LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                 llvm_i32_ty]>;
   def int_evl_fadd : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
@@ -1253,7 +1250,31 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
                                 LLVMMatchType<0>,
                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty]>;
+
+// Comparison
+// The metadata argument is the comparison predicate (CmpInst::Predicate encoded as i8)
+  def int_evl_fcmp : Intrinsic<[ llvm_anyvector_ty ],
+                               [ llvm_anyvector_ty,
+                                 LLVMMatchType<1>,
+                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 llvm_i32_ty,
+                                 llvm_metadata_ty]>;
+
+  def int_evl_icmp : Intrinsic<[ llvm_anyvector_ty ],
+                               [ llvm_anyvector_ty,
+                                 LLVMMatchType<1>,
+                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 llvm_i32_ty,
+                                 llvm_metadata_ty]>;
 }
+
+
+
+def int_evl_fneg : Intrinsic<[ llvm_anyvector_ty ],
+                             [ LLVMMatchType<0>,
+                               LLVMVectorSameWidth<0, llvm_i1_ty>,
+                               llvm_i32_ty],
+                             [ IntrNoMem, Mask<1>, VectorLength<2> ]>;
 
 def int_evl_fma : Intrinsic<[ llvm_anyvector_ty ],
                             [ LLVMMatchType<0>,
@@ -1261,38 +1282,38 @@ def int_evl_fma : Intrinsic<[ llvm_anyvector_ty ],
                               LLVMMatchType<0>,
                               LLVMVectorSameWidth<0, llvm_i1_ty>,
                               llvm_i32_ty],
-                            [IntrNoMem, Mask<3>, VectorLength<4>]>;
+                            [ IntrNoMem, Mask<3>, VectorLength<4> ]>;
 
 // Shuffle
-def int_evl_expand: Intrinsic<[llvm_anyvector_ty],
-                              [LLVMMatchType<0>,
-                               LLVMMatchType<0>,
-                               LLVMVectorSameWidth<0, llvm_i1_ty>,
-                               llvm_i32_ty],
-                              [IntrNoMem, Mask<2>, VectorLength<3>]>;
-
-def int_evl_compress: Intrinsic<[llvm_anyvector_ty],
-                                [LLVMMatchType<0>,
-                                 LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                 llvm_i32_ty],
-                                [IntrNoMem, Mask<2>, VectorLength<3>]>;
-
-// Select
-def int_evl_select : Intrinsic<[llvm_anyvector_ty],
-                               [LLVMMatchType<0>,
+def int_evl_expand: Intrinsic<[ llvm_anyvector_ty ],
+                              [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,
                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
-                               [IntrNoMem, Mask<2>, VectorLength<3>]>;
+                              [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
+
+def int_evl_compress: Intrinsic<[ llvm_anyvector_ty ],
+                                [ LLVMMatchType<0>,
+                                  LLVMMatchType<0>,
+                                  LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                  llvm_i32_ty],
+                                [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
+
+// Select
+def int_evl_select : Intrinsic<[ llvm_anyvector_ty ],
+                               [ LLVMMatchType<0>,
+                                 LLVMMatchType<0>,
+                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 llvm_i32_ty],
+                               [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
 
 // Compose
-def int_evl_compose : Intrinsic<[llvm_anyvector_ty],
-                                [LLVMMatchType<0>,
-                                 LLVMMatchType<0>,
-                                 llvm_i32_ty,
-                                 llvm_i32_ty],
-                                [IntrNoMem, VectorLength<2>]>;
+def int_evl_compose : Intrinsic<[ llvm_anyvector_ty ],
+                                [ LLVMMatchType<0>,
+                                  LLVMMatchType<0>,
+                                  llvm_i32_ty,
+                                  llvm_i32_ty],
+                                [ IntrNoMem, VectorLength<3> ]>;
                   
 
 
