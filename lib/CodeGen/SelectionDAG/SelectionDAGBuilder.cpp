@@ -6977,7 +6977,7 @@ void SelectionDAGBuilder::visitConstrainedFPIntrinsic(
 void SelectionDAGBuilder::visitCmpEVL(const EVLIntrinsic &I) {
   ISD::CondCode Condition;
   CmpInst::Predicate predicate = I.getCmpPredicate();
-  bool IsFP = I.getType()->isFPOrFPVectorTy();
+  bool IsFP = I.getOperand(0)->getType()->isFPOrFPVectorTy();
   if (IsFP) {
     Condition = getFCmpCondCode(predicate);
     auto *FPMO = dyn_cast<FPMathOperator>(&I);
