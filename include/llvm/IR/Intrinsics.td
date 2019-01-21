@@ -1070,19 +1070,6 @@ def int_evl_scatter: Intrinsic<[],
                                  llvm_i32_ty],
                                [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
-def int_evl_expandload: Intrinsic<[ llvm_anyvector_ty],
-                                  [ LLVMPointerToElt<0>,
-                                    LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                  [ IntrReadMem, Mask<1>, VectorLength<2> ]>;
-
-def int_evl_compressstore: Intrinsic<[],
-                                     [ llvm_anyvector_ty,
-                                       LLVMPointerToElt<0>,
-                                       LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                       llvm_i32_ty],
-                                     [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
-
 // Reductions
 def int_evl_reduce_fadd : Intrinsic<[llvm_anyfloat_ty],
                                     [llvm_anyfloat_ty,
@@ -1275,6 +1262,13 @@ def int_evl_fma : Intrinsic<[ llvm_anyvector_ty ],
                             [ IntrNoMem, Mask<3>, VectorLength<4> ]>;
 
 // Shuffle
+def int_evl_vshift: Intrinsic<[ llvm_anyvector_ty ],
+                              [ LLVMMatchType<0>,
+                                llvm_i32_ty,
+                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                llvm_i32_ty],
+                              [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
+
 def int_evl_expand: Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,

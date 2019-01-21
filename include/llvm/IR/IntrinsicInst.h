@@ -212,12 +212,15 @@ namespace llvm {
     bool isBinaryOp() const;
     bool isTernaryOp() const;
 
+    CmpInst::Predicate getCmpPredicate() const;
+
     Value* GetMask() const;
     Value* GetVectorLength() const;
 
     // Methods for support type inquiry through isa, cast, and dyn_cast:
     static bool classof(const IntrinsicInst *I) {
       switch (I->getIntrinsicID()) {
+
       case Intrinsic::evl_cmp:
 
       case Intrinsic::evl_and:
@@ -231,20 +234,21 @@ namespace llvm {
       case Intrinsic::evl_compose:
       case Intrinsic::evl_compress:
       case Intrinsic::evl_expand:
+      case Intrinsic::evl_vshift:
 
       case Intrinsic::evl_load:
       case Intrinsic::evl_store:
-      case Intrinsic::evl_compressstore:
-      case Intrinsic::evl_expandload:
       case Intrinsic::evl_gather:
       case Intrinsic::evl_scatter:
 
       case Intrinsic::evl_fneg:
+
       case Intrinsic::evl_fadd:
       case Intrinsic::evl_fsub:
       case Intrinsic::evl_fmul:
       case Intrinsic::evl_fdiv:
       case Intrinsic::evl_frem:
+
       case Intrinsic::evl_fma:
 
       case Intrinsic::evl_add:

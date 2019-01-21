@@ -138,6 +138,11 @@ ConstrainedFPIntrinsic::getExceptionBehavior() const {
     .Default(ebInvalid);
 }
 
+CmpInst::Predicate
+EVLIntrinsic::getCmpPredicate() const {
+  return static_cast<CmpInst::Predicate>(cast<ConstantInt>(getArgOperand(4))->getZExtValue());
+}
+
 bool EVLIntrinsic::isUnaryOp() const {
   switch (getIntrinsicID()) {
     default:

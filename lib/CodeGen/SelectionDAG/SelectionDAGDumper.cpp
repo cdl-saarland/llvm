@@ -218,9 +218,6 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::FLOG10:                     return "flog10";
   case ISD::STRICT_FLOG10:              return "strict_flog10";
 
-  // Explicit vector Length Unary operators
-  case ISD::EVL_FNEG:                       return "evl_fneg";
-
   // Binary operators
   case ISD::ADD:                        return "add";
   case ISD::SUB:                        return "sub";
@@ -268,27 +265,6 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::UMIN:                       return "umin";
   case ISD::UMAX:                       return "umax";
 
-  // Explicit Vector Length Binary operators
-  case ISD::EVL_ADD:                        return "evl_add";
-  case ISD::EVL_SUB:                        return "evl_sub";
-  case ISD::EVL_MUL:                        return "evl_mul";
-  case ISD::EVL_SDIV:                       return "evl_sdiv";
-  case ISD::EVL_UDIV:                       return "evl_udiv";
-  case ISD::EVL_SREM:                       return "evl_srem";
-  case ISD::EVL_UREM:                       return "evl_urem";
-  case ISD::EVL_AND:                        return "evl_and";
-  case ISD::EVL_OR:                         return "evl_or";
-  case ISD::EVL_XOR:                        return "evl_xor";
-  case ISD::EVL_SHL:                        return "evl_shl";
-  case ISD::EVL_SRA:                        return "evl_sra";
-  case ISD::EVL_SRL:                        return "evl_srl";
-  case ISD::EVL_FADD:                       return "evl_fadd";
-  case ISD::EVL_FSUB:                       return "evl_fsub";
-  case ISD::EVL_FMUL:                       return "evl_fmul";
-  case ISD::EVL_FDIV:                       return "evl_fdiv";
-  case ISD::EVL_FMA:                        return "evl_fma";
-  case ISD::EVL_FREM:                       return "evl_frem";
-
   case ISD::FPOWI:                      return "fpowi";
   case ISD::STRICT_FPOWI:               return "strict_fpowi";
   case ISD::SETCC:                      return "setcc";
@@ -319,8 +295,6 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::SHL_PARTS:                  return "shl_parts";
   case ISD::SRA_PARTS:                  return "sra_parts";
   case ISD::SRL_PARTS:                  return "srl_parts";
-
-  case ISD::EVL_COMPOSE:                return "evl_compose";
 
   case ISD::SADDSAT:                    return "saddsat";
   case ISD::UADDSAT:                    return "uaddsat";
@@ -450,19 +424,64 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::VECREDUCE_FMAX:             return "vecreduce_fmax";
   case ISD::VECREDUCE_FMIN:             return "vecreduce_fmin";
 
-  case ISD::EVL_REDUCE_FADD:             return "evl_reduce_fadd";
-  case ISD::EVL_REDUCE_FMUL:             return "evl_reduce_fmul";
-  case ISD::EVL_REDUCE_ADD:              return "evl_reduce_add";
-  case ISD::EVL_REDUCE_MUL:              return "evl_reduce_mul";
-  case ISD::EVL_REDUCE_AND:              return "evl_reduce_and";
-  case ISD::EVL_REDUCE_OR:               return "evl_reduce_or";
-  case ISD::EVL_REDUCE_XOR:              return "evl_reduce_xor";
-  case ISD::EVL_REDUCE_SMAX:             return "evl_reduce_smax";
-  case ISD::EVL_REDUCE_SMIN:             return "evl_reduce_smin";
-  case ISD::EVL_REDUCE_UMAX:             return "evl_reduce_umax";
-  case ISD::EVL_REDUCE_UMIN:             return "evl_reduce_umin";
-  case ISD::EVL_REDUCE_FMAX:             return "evl_reduce_fmax";
-  case ISD::EVL_REDUCE_FMIN:             return "evl_reduce_fmin";
+  // Explicit Vector Length erxtension
+  // EVL Memory
+  case ISD::EVL_LOAD:                   return "evl_load";
+  case ISD::EVL_STORE:                  return "evl_store";
+  case ISD::EVL_GATHER:                 return "evl_gather";
+  case ISD::EVL_SCATTER:                return "evl_scatter";
+
+  // EVL Unary operators
+  case ISD::EVL_FNEG:                   return "evl_fneg";
+
+  // EVL Binary operators
+  case ISD::EVL_ADD:                    return "evl_add";
+  case ISD::EVL_SUB:                    return "evl_sub";
+  case ISD::EVL_MUL:                    return "evl_mul";
+  case ISD::EVL_SDIV:                   return "evl_sdiv";
+  case ISD::EVL_UDIV:                   return "evl_udiv";
+  case ISD::EVL_SREM:                   return "evl_srem";
+  case ISD::EVL_UREM:                   return "evl_urem";
+  case ISD::EVL_AND:                    return "evl_and";
+  case ISD::EVL_OR:                     return "evl_or";
+  case ISD::EVL_XOR:                    return "evl_xor";
+  case ISD::EVL_SHL:                    return "evl_shl";
+  case ISD::EVL_SRA:                    return "evl_sra";
+  case ISD::EVL_SRL:                    return "evl_srl";
+  case ISD::EVL_FADD:                   return "evl_fadd";
+  case ISD::EVL_FSUB:                   return "evl_fsub";
+  case ISD::EVL_FMUL:                   return "evl_fmul";
+  case ISD::EVL_FDIV:                   return "evl_fdiv";
+  case ISD::EVL_FREM:                   return "evl_frem";
+
+  // EVL comparison
+  case ISD::EVL_SETCC:                  return "evl_setcc";
+
+  // EVL ternary operators
+  case ISD::EVL_FMA:                    return "evl_fma";
+
+  // EVL shuffle
+  case ISD::EVL_VSHIFT:                 return "evl_vshift";
+  case ISD::EVL_COMPRESS:               return "evl_compress";
+  case ISD::EVL_EXPAND:                 return "evl_expand";
+
+  case ISD::EVL_COMPOSE:                return "evl_compose";
+  case ISD::EVL_SELECT:                 return "evl_select";
+
+  // EVL reduction operators
+  case ISD::EVL_REDUCE_FADD:            return "evl_reduce_fadd";
+  case ISD::EVL_REDUCE_FMUL:            return "evl_reduce_fmul";
+  case ISD::EVL_REDUCE_ADD:             return "evl_reduce_add";
+  case ISD::EVL_REDUCE_MUL:             return "evl_reduce_mul";
+  case ISD::EVL_REDUCE_AND:             return "evl_reduce_and";
+  case ISD::EVL_REDUCE_OR:              return "evl_reduce_or";
+  case ISD::EVL_REDUCE_XOR:             return "evl_reduce_xor";
+  case ISD::EVL_REDUCE_SMAX:            return "evl_reduce_smax";
+  case ISD::EVL_REDUCE_SMIN:            return "evl_reduce_smin";
+  case ISD::EVL_REDUCE_UMAX:            return "evl_reduce_umax";
+  case ISD::EVL_REDUCE_UMIN:            return "evl_reduce_umin";
+  case ISD::EVL_REDUCE_FMAX:            return "evl_reduce_fmax";
+  case ISD::EVL_REDUCE_FMIN:            return "evl_reduce_fmin";
   }
 }
 

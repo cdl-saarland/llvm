@@ -368,6 +368,19 @@ namespace ISD {
     /// in terms of the element size of VEC1/VEC2, not in terms of bytes.
     VECTOR_SHUFFLE,
 
+    /// EVL_VSHIFT(VEC1, AMOUNT, MASK, VLEN) - Returns a vector, of the same type as
+    /// VEC1. AMOUNT is an integer value. The returned vector is equivalent
+    /// to VEC1 shifted by AMOUNT (RETURNED_VEC[idx] = VEC1[idx + AMOUNT]).
+    EVL_VSHIFT,
+
+    /// EVL_COMPRESS(VEC1, MASK, VLEN) - Returns a vector, of the same type as
+    /// VEC1.
+    EVL_COMPRESS,
+
+    /// EVL_EXPAND(VEC1, MASK, VLEN) - Returns a vector, of the same type as
+    /// VEC1.
+    EVL_EXPAND,
+
     /// SCALAR_TO_VECTOR(VAL) - This represents the operation of loading a
     /// scalar value into element 0 of the resultant vector type.  The top
     /// elements 1 to N-1 of the N-element vector are undefined.  The type
@@ -431,6 +444,7 @@ namespace ISD {
     /// change the condition type in order to match the VSELECT node using a
     /// pattern. The condition follows the BooleanContent format of the target.
     VSELECT,
+    EVL_SELECT,
 
     /// Select with an integer pivot (op #0) and two vector operands (ops #1
     /// and #2), returning a vector result.  All vectors have the same length.
@@ -452,6 +466,7 @@ namespace ISD {
     /// them with (op #2) as a CondCodeSDNode. If the operands are vector types
     /// then the result type must also be a vector type.
     SETCC,
+    EVL_SETCC,
 
     /// Like SetCC, ops #0 and #1 are the LHS and RHS operands to compare, but
     /// op #2 is a boolean indicating if there is an incoming carry. This
