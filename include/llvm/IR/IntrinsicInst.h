@@ -218,6 +218,8 @@ namespace llvm {
     // Methods for support type inquiry through isa, cast, and dyn_cast:
     static bool classof(const IntrinsicInst *I) {
       switch (I->getIntrinsicID()) {
+      case Intrinsic::evl_cmp:
+
       case Intrinsic::evl_and:
       case Intrinsic::evl_or:
       case Intrinsic::evl_xor:
@@ -234,7 +236,10 @@ namespace llvm {
       case Intrinsic::evl_store:
       case Intrinsic::evl_compressstore:
       case Intrinsic::evl_expandload:
+      case Intrinsic::evl_gather:
+      case Intrinsic::evl_scatter:
 
+      case Intrinsic::evl_fneg:
       case Intrinsic::evl_fadd:
       case Intrinsic::evl_fsub:
       case Intrinsic::evl_fmul:
@@ -250,18 +255,21 @@ namespace llvm {
       case Intrinsic::evl_urem:
       case Intrinsic::evl_srem:
 
+      case Intrinsic::evl_reduce_add:
+      case Intrinsic::evl_reduce_mul:
+      case Intrinsic::evl_reduce_umin:
+      case Intrinsic::evl_reduce_umax:
+      case Intrinsic::evl_reduce_smin:
+      case Intrinsic::evl_reduce_smax:
+
       case Intrinsic::evl_reduce_and:
       case Intrinsic::evl_reduce_or:
       case Intrinsic::evl_reduce_xor:
+
       case Intrinsic::evl_reduce_fadd:
-      case Intrinsic::evl_reduce_fmax:
-      case Intrinsic::evl_reduce_fmin:
       case Intrinsic::evl_reduce_fmul:
-      case Intrinsic::evl_reduce_mul:
-      case Intrinsic::evl_reduce_umax:
-      case Intrinsic::evl_reduce_umin:
-      case Intrinsic::evl_reduce_smax:
-      case Intrinsic::evl_reduce_smin:
+      case Intrinsic::evl_reduce_fmin:
+      case Intrinsic::evl_reduce_fmax:
         return true;
 
       default: return false;

@@ -1252,20 +1252,13 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
                                 llvm_i32_ty]>;
 
 // Comparison
-// The metadata argument is the comparison predicate (CmpInst::Predicate encoded as i8)
-  def int_evl_fcmp : Intrinsic<[ llvm_anyvector_ty ],
-                               [ llvm_anyvector_ty,
-                                 LLVMMatchType<1>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                 llvm_i32_ty,
-                                 llvm_metadata_ty]>;
-
-  def int_evl_icmp : Intrinsic<[ llvm_anyvector_ty ],
-                               [ llvm_anyvector_ty,
-                                 LLVMMatchType<1>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                 llvm_i32_ty,
-                                 llvm_metadata_ty]>;
+// The last argument is the comparison predicate 
+  def int_evl_cmp : Intrinsic<[ llvm_anyvector_ty ],
+                              [ llvm_anyvector_ty,
+                                LLVMMatchType<1>,
+                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                llvm_i32_ty,
+                                llvm_i8_ty]>;
 }
 
 

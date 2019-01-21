@@ -8,8 +8,9 @@
 namespace llvm {
 
 enum class EVLTypeToken : int8_t {
-  Scalar = 1,
-  Vector = 2
+  Scalar = 1, // scalar operand type
+  Vector = 2, // vectorized operand type
+  Mask = 3    // vector mask type
 };
 
 using TypeTokenVec = SmallVector<EVLTypeToken, 4>;
