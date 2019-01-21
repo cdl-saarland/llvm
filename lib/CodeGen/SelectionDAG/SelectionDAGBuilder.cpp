@@ -7055,48 +7055,55 @@ void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
   case Intrinsic::evl_reduce_umin: Opcode = ISD::EVL_REDUCE_UMIN; break;
   }
 
-  const TargetLowering &TLI = DAG.getTargetLoweringInfo();
-  SDValue Chain = getRoot();
-  SmallVector<EVT, 4> ValueVTs;
-  ComputeValueVTs(TLI, DAG.getDataLayout(), EVLInst.getType(), ValueVTs);
-  ValueVTs.push_back(MVT::Other); // Out chain
+  // TODO memory evl: SDValue Chain = getRoot();
 
+  SmallVector<EVT, 4> ValueVTs;
+  const TargetLowering &TLI = DAG.getTargetLoweringInfo();
+  ComputeValueVTs(TLI, DAG.getDataLayout(), EVLInst.getType(), ValueVTs);
   SDVTList VTs = DAG.getVTList(ValueVTs);
+
+  // ValueVTs.push_back(MVT::Other); // Out chain
+
+
   SDValue Result;
+
   switch (EVLInst.getNumArgOperands()) {
     default:
       llvm_unreachable("unexpected number of arguments to evl intrinsic");
     case 3:
     Result = DAG.getNode(Opcode, sdl, VTs,
-                         { Chain, getValue(EVLInst.getArgOperand(0)),
-                                  getValue(EVLInst.getArgOperand(1)),
-                                  getValue(EVLInst.getArgOperand(2)) });
+                         { getValue(EVLInst.getArgOperand(0)),
+                           getValue(EVLInst.getArgOperand(1)),
+                           getValue(EVLInst.getArgOperand(2)) });
     break;
 
     case 4:
     Result = DAG.getNode(Opcode, sdl, VTs,
-                         { Chain, getValue(EVLInst.getArgOperand(0)),
-                                  getValue(EVLInst.getArgOperand(1)),
-                                  getValue(EVLInst.getArgOperand(2)),
-                                  getValue(EVLInst.getArgOperand(3)) });
+                         { getValue(EVLInst.getArgOperand(0)),
+                           getValue(EVLInst.getArgOperand(1)),
+                           getValue(EVLInst.getArgOperand(2)),
+                           getValue(EVLInst.getArgOperand(3)) });
     break;
 
     case 5:
     Result = DAG.getNode(Opcode, sdl, VTs,
-                          { Chain, getValue(EVLInst.getArgOperand(0)),
-                                   getValue(EVLInst.getArgOperand(1)),
-                                   getValue(EVLInst.getArgOperand(2)),
-                                   getValue(EVLInst.getArgOperand(3)),
-                                   getValue(EVLInst.getArgOperand(4)) });
+                          { getValue(EVLInst.getArgOperand(0)),
+                            getValue(EVLInst.getArgOperand(1)),
+                            getValue(EVLInst.getArgOperand(2)),
+                            getValue(EVLInst.getArgOperand(3)),
+                            getValue(EVLInst.getArgOperand(4)) });
     break;
   }
 
   if (Result.getNode()->getNumValues() == 2) {
+    // this evl node has a chain
     SDValue OutChain = Result.getValue(1);
     DAG.setRoot(OutChain);
     SDValue EVLResult = Result.getValue(0);
     setValue(&EVLInst, EVLResult);
   } else {
+    // this is a pure node
+    setValue(&EVLInst, Result);
   }
 }
 
