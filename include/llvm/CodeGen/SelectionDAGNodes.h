@@ -695,6 +695,66 @@ public:
     }
   }
 
+  /// Test whether this is an Explicit Vector Length node.
+  bool isEVL() const {
+    switch (NodeType) {
+      default:
+        return false;
+      case ISD::EVL_LOAD:
+      case ISD::EVL_STORE:
+      case ISD::EVL_GATHER:
+      case ISD::EVL_SCATTER:
+
+      case ISD::EVL_FNEG:
+
+      case ISD::EVL_FADD:
+      case ISD::EVL_FMUL:
+      case ISD::EVL_FSUB:
+      case ISD::EVL_FDIV:
+      case ISD::EVL_FREM:
+
+      case ISD::EVL_FMA:
+
+      case ISD::EVL_ADD:
+      case ISD::EVL_MUL:
+      case ISD::EVL_SUB:
+      case ISD::EVL_SRA:
+      case ISD::EVL_SRL:
+      case ISD::EVL_SHL:
+      case ISD::EVL_UDIV:
+      case ISD::EVL_SDIV:
+      case ISD::EVL_UREM:
+      case ISD::EVL_SREM:
+
+      case ISD::EVL_EXPAND:
+      case ISD::EVL_COMPRESS:
+      case ISD::EVL_VSHIFT:
+      case ISD::EVL_SETCC:
+      case ISD::EVL_COMPOSE:
+
+      case ISD::EVL_AND:
+      case ISD::EVL_XOR:
+      case ISD::EVL_OR:
+
+      case ISD::EVL_REDUCE_ADD:
+      case ISD::EVL_REDUCE_SMIN:
+      case ISD::EVL_REDUCE_SMAX:
+      case ISD::EVL_REDUCE_UMIN:
+      case ISD::EVL_REDUCE_UMAX:
+
+      case ISD::EVL_REDUCE_MUL:
+      case ISD::EVL_REDUCE_AND:
+      case ISD::EVL_REDUCE_OR:
+      case ISD::EVL_REDUCE_FADD:
+      case ISD::EVL_REDUCE_FMUL:
+      case ISD::EVL_REDUCE_FMIN:
+      case ISD::EVL_REDUCE_FMAX:
+
+        return true;
+    }
+  }
+
+
   /// Test if this node has a post-isel opcode, directly
   /// corresponding to a MachineInstr opcode.
   bool isMachineOpcode() const { return NodeType < 0; }

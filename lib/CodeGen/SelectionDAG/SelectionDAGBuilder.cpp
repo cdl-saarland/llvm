@@ -6109,10 +6109,13 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
   case Intrinsic::evl_expand:
   case Intrinsic::evl_vshift:
 
+#if 0
+  // TODO translate to SDNodes
   case Intrinsic::evl_load:
   case Intrinsic::evl_store:
   case Intrinsic::evl_gather:
   case Intrinsic::evl_scatter:
+#endif
 
   case Intrinsic::evl_fneg:
 
@@ -6998,12 +7001,14 @@ void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
   SDLoc sdl = getCurSDLoc();
   unsigned Opcode;
   switch (EVLInst.getIntrinsicID()) {
-  default: llvm_unreachable("Impossible intrinsic");  // Can't reach here.
+  default:
+    llvm_unreachable("Impossible intrinsic");  // Can't reach here.
 
-  case Intrinsic::evl_load: visitLoadEVL(EVLinst); return;
-  case Intrinsic::evl_store: visitStoreEVL(EVLInst); return;
-  case Intrinsic::evl_gather: visitGatherEVL(EVLInst); return;
-  case Intrinsic::evl_scatter: visitScatterEVL(EVLInst); return;
+  case Intrinsic::evl_load:
+  case Intrinsic::evl_store:
+  case Intrinsic::evl_gather:
+  case Intrinsic::evl_scatter:
+    llvm_unreachable("TODO implement");
 
   case Intrinsic::evl_cmp: visitCmpEVL(EVLInst); return;
 
