@@ -6965,6 +6965,34 @@ SDValue SelectionDAG::getIndexedStore(SDValue OrigStore, const SDLoc &dl,
   return V;
 }
 
+SDValue SelectionDAG::getLoadEVL(EVT VT, const SDLoc &dl, SDValue Chain,
+                                    SDValue Ptr, SDValue Mask, SDValue VLen,
+                                    EVT MemVT, MachineMemOperand *MMO,
+                                    ISD::LoadExtType ExtTy) {
+  SDVTList VTs = getVTList(VT, MVT::Other);
+  SDValue Ops[] = { Chain, Ptr, Mask, VLen };
+  FoldingSetNodeID ID;
+  AddNodeIDNode(ID, ISD::EVL_LOAD, VTs, Ops);
+  ID.AddInteger(VT.getRawBits());
+  ID.AddInteger(getSyntheticNodeSubclassData<EVLLoadSDNode>(
+      dl.getIROrder(), VTs, ExtTy, MemVT, MMO));
+  ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
+  void *IP = nullptr;
+  if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
+    cast<EVLLoadSDNode>(E)->refineAlignment(MMO);
+    return SDValue(E, 0);
+  }
+  auto *N = newSDNode<EVLLoadSDNode>(dl.getIROrder(), dl.getDebugLoc(), VTs,
+                                        ExtTy, MemVT, MMO);
+  createOperands(N, Ops);
+
+  CSEMap.InsertNode(N, IP);
+  InsertNode(N);
+  SDValue V(N, 0);
+  NewSDValueDbgMsg(V, "Creating new node: ", this);
+  return V;
+}
+
 SDValue SelectionDAG::getMaskedLoad(EVT VT, const SDLoc &dl, SDValue Chain,
                                     SDValue Ptr, SDValue Mask, SDValue PassThru,
                                     EVT MemVT, MachineMemOperand *MMO,
@@ -6984,6 +7012,37 @@ SDValue SelectionDAG::getMaskedLoad(EVT VT, const SDLoc &dl, SDValue Chain,
   }
   auto *N = newSDNode<MaskedLoadSDNode>(dl.getIROrder(), dl.getDebugLoc(), VTs,
                                         ExtTy, isExpanding, MemVT, MMO);
+  createOperands(N, Ops);
+
+  CSEMap.InsertNode(N, IP);
+  InsertNode(N);
+  SDValue V(N, 0);
+  NewSDValueDbgMsg(V, "Creating new node: ", this);
+  return V;
+}
+
+SDValue SelectionDAG::getStoreEVL(SDValue Chain, const SDLoc &dl,
+                                     SDValue Val, SDValue Ptr, SDValue Mask,
+                                     SDValue VLen, EVT MemVT, MachineMemOperand *MMO,
+                                     bool IsTruncating) {
+  assert(Chain.getValueType() == MVT::Other &&
+        "Invalid chain type");
+  EVT VT = Val.getValueType();
+  SDVTList VTs = getVTList(MVT::Other);
+  SDValue Ops[] = { Chain, Val, Ptr, Mask, VLen };
+  FoldingSetNodeID ID;
+  AddNodeIDNode(ID, ISD::EVL_STORE, VTs, Ops);
+  ID.AddInteger(VT.getRawBits());
+  ID.AddInteger(getSyntheticNodeSubclassData<EVLStoreSDNode>(
+      dl.getIROrder(), VTs, IsTruncating, MemVT, MMO));
+  ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
+  void *IP = nullptr;
+  if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
+    cast<EVLStoreSDNode>(E)->refineAlignment(MMO);
+    return SDValue(E, 0);
+  }
+  auto *N = newSDNode<EVLStoreSDNode>(dl.getIROrder(), dl.getDebugLoc(), VTs,
+                                         IsTruncating, MemVT, MMO);
   createOperands(N, Ops);
 
   CSEMap.InsertNode(N, IP);

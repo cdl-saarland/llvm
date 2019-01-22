@@ -4329,6 +4329,46 @@ void SelectionDAGBuilder::visitMaskedStore(const CallInst &I,
   setValue(&I, StoreNode);
 }
 
+void SelectionDAGBuilder::visitStoreEVL(const CallInst &I) {
+  SDLoc sdl = getCurSDLoc();
+
+  auto getEVLStoreOps = [&](Value* &Ptr, Value* &Mask, Value* &Src0,
+                            Value * &VLen) {
+    // llvm.masked.store.*(Src0, Ptr, Mask, VLen)
+    Src0 = I.getArgOperand(0);
+    Ptr = I.getArgOperand(1);
+    Mask = I.getArgOperand(2);
+    VLen = I.getArgOperand(3);
+  };
+
+  Value  *PtrOperand, *MaskOperand, *Src0Operand, *VLenOperand;
+  getEVLStoreOps(PtrOperand, MaskOperand, Src0Operand, VLenOperand);
+
+  unsigned Alignment = 0; // TODO infer alignment
+
+  SDValue Ptr = getValue(PtrOperand);
+  SDValue Src0 = getValue(Src0Operand);
+  SDValue Mask = getValue(MaskOperand);
+  SDValue VLen = getValue(VLenOperand);
+
+  EVT VT = Src0.getValueType();
+  if (!Alignment)
+    Alignment = DAG.getEVTAlignment(VT);
+
+  AAMDNodes AAInfo;
+  I.getAAMetadata(AAInfo);
+
+  MachineMemOperand *MMO =
+    DAG.getMachineFunction().
+    getMachineMemOperand(MachinePointerInfo(PtrOperand),
+                          MachineMemOperand::MOStore,  VT.getStoreSize(),
+                          Alignment, AAInfo);
+  SDValue StoreNode = DAG.getStoreEVL(getRoot(), sdl, Src0, Ptr, Mask, VLen, VT,
+                                         MMO, false /* Truncating */);
+  DAG.setRoot(StoreNode);
+  setValue(&I, StoreNode);
+}
+
 // Get a uniform base for the Gather/Scatter intrinsic.
 // The first argument of the Gather/Scatter intrinsic is a vector of pointers.
 // We try to represent it as a base pointer + vector of indices.
@@ -4545,6 +4585,62 @@ void SelectionDAGBuilder::visitMaskedGather(const CallInst &I) {
   if (!ConstantMemory)
     PendingLoads.push_back(OutChain);
   setValue(&I, Gather);
+}
+
+void SelectionDAGBuilder::visitLoadEVL(const CallInst &I) {
+  SDLoc sdl = getCurSDLoc();
+
+  auto getMaskedLoadOps = [&](Value* &Ptr, Value* &Mask, Value* &VLen,
+                           unsigned& Alignment) {
+    // @llvm.evl.load.*(Ptr, Mask, Vlen)
+    Ptr = I.getArgOperand(0);
+    Alignment = 0; // TODO infer alignment //Alignment = cast<ConstantInt>(I.getArgOperand(1))->getZExtValue();
+    Mask = I.getArgOperand(1);
+    VLen = I.getArgOperand(2);
+  };
+
+  Value  *PtrOperand, *MaskOperand, *VLenOperand;
+  unsigned Alignment;
+  getMaskedLoadOps(PtrOperand, MaskOperand, VLenOperand, Alignment);
+
+  SDValue Ptr = getValue(PtrOperand);
+  SDValue VLen = getValue(VLenOperand);
+  SDValue Mask = getValue(MaskOperand);
+
+  // infer the return type
+  const TargetLowering &TLI = DAG.getTargetLoweringInfo();
+  SmallVector<EVT, 4> ValValueVTs;
+  ComputeValueVTs(TLI, DAG.getDataLayout(), I.getType(), ValValueVTs);
+  EVT VT = ValValueVTs[0];
+  assert((ValValueVTs.size() == 1) && "splitting not implemented");
+
+  if (!Alignment)
+    Alignment = DAG.getEVTAlignment(VT);
+
+  AAMDNodes AAInfo;
+  I.getAAMetadata(AAInfo);
+  const MDNode *Ranges = I.getMetadata(LLVMContext::MD_range);
+
+  // Do not serialize masked loads of constant memory with anything.
+  bool AddToChain =
+      !AA || !AA->pointsToConstantMemory(MemoryLocation(
+                 PtrOperand,
+                 LocationSize::precise(
+                     DAG.getDataLayout().getTypeStoreSize(I.getType())),
+                 AAInfo));
+  SDValue InChain = AddToChain ? DAG.getRoot() : DAG.getEntryNode();
+
+  MachineMemOperand *MMO =
+    DAG.getMachineFunction().
+    getMachineMemOperand(MachinePointerInfo(PtrOperand),
+                          MachineMemOperand::MOLoad,  VT.getStoreSize(),
+                          Alignment, AAInfo, Ranges);
+
+  SDValue Load = DAG.getLoadEVL(VT, sdl, InChain, Ptr, Mask, VLen, VT, MMO,
+                                   ISD::NON_EXTLOAD);
+  if (AddToChain)
+    PendingLoads.push_back(Load.getValue(1));
+  setValue(&I, Load);
 }
 
 void SelectionDAGBuilder::visitAtomicCmpXchg(const AtomicCmpXchgInst &I) {
@@ -6109,10 +6205,10 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
   case Intrinsic::evl_expand:
   case Intrinsic::evl_vshift:
 
-#if 0
-  // TODO translate to SDNodes
   case Intrinsic::evl_load:
   case Intrinsic::evl_store:
+#if 0
+  // TODO translate to SDNodes
   case Intrinsic::evl_gather:
   case Intrinsic::evl_scatter:
 #endif
@@ -7002,13 +7098,14 @@ void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
   unsigned Opcode;
   switch (EVLInst.getIntrinsicID()) {
   default:
-    llvm_unreachable("Impossible intrinsic");  // Can't reach here.
+    llvm_unreachable("Unforeseen intrinsic");  // Can't reach here.
 
-  case Intrinsic::evl_load:
-  case Intrinsic::evl_store:
   case Intrinsic::evl_gather:
   case Intrinsic::evl_scatter:
-    llvm_unreachable("TODO implement");
+    llvm_unreachable("TODO implement SDNode lowering");
+
+  case Intrinsic::evl_load: visitLoadEVL(EVLInst); return;
+  case Intrinsic::evl_store: visitStoreEVL(EVLInst); return;
 
   case Intrinsic::evl_cmp: visitCmpEVL(EVLInst); return;
 

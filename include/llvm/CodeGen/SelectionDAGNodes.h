@@ -545,6 +545,7 @@ BEGIN_TWO_BYTE_PACK()
   class LoadSDNodeBitfields {
     friend class LoadSDNode;
     friend class MaskedLoadSDNode;
+    friend class EVLLoadSDNode;
 
     uint16_t : NumLSBaseSDNodeBits;
 
@@ -555,6 +556,7 @@ BEGIN_TWO_BYTE_PACK()
   class StoreSDNodeBitfields {
     friend class StoreSDNode;
     friend class MaskedStoreSDNode;
+    friend class EVLStoreSDNode;
 
     uint16_t : NumLSBaseSDNodeBits;
 
@@ -1449,6 +1451,10 @@ public:
            N->getOpcode() == ISD::MSTORE              ||
            N->getOpcode() == ISD::MGATHER             ||
            N->getOpcode() == ISD::MSCATTER            ||
+           N->getOpcode() == ISD::EVL_LOAD            ||
+           N->getOpcode() == ISD::EVL_STORE           ||
+           N->getOpcode() == ISD::EVL_GATHER          ||
+           N->getOpcode() == ISD::EVL_SCATTER         ||
            N->isMemIntrinsic()                        ||
            N->isTargetMemoryOpcode();
   }
@@ -2304,6 +2310,96 @@ public:
 
   static bool classof(const SDNode *N) {
     return N->getOpcode() == ISD::STORE;
+  }
+};
+
+/// This base class is used to represent MLOAD and MSTORE nodes
+class EVLLoadStoreSDNode : public MemSDNode {
+public:
+  friend class SelectionDAG;
+
+  EVLLoadStoreSDNode(ISD::NodeType NodeTy, unsigned Order,
+                        const DebugLoc &dl, SDVTList VTs, EVT MemVT,
+                        MachineMemOperand *MMO)
+      : MemSDNode(NodeTy, Order, dl, VTs, MemVT, MMO) {}
+
+  // EVLLoadSDNode (Chain, ptr, mask, VLen)
+  // EVLStoreSDNode (Chain, data, ptr, mask, VLen)
+  // Mask is a vector of i1 elements, Vlen is i32
+  const SDValue &getBasePtr() const {
+    return getOperand(getOpcode() == ISD::EVL_LOAD ? 1 : 2);
+  }
+  const SDValue &getMask() const {
+    return getOperand(getOpcode() == ISD::EVL_LOAD ? 2 : 3);
+  }
+  const SDValue &getVectorLength() const {
+    return getOperand(getOpcode() == ISD::EVL_LOAD ? 3 : 4);
+  }
+
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::EVL_LOAD ||
+           N->getOpcode() == ISD::EVL_STORE;
+  }
+};
+
+/// This class is used to represent an MLOAD node
+class EVLLoadSDNode : public EVLLoadStoreSDNode {
+public:
+  friend class SelectionDAG;
+
+  EVLLoadSDNode(unsigned Order, const DebugLoc &dl, SDVTList VTs,
+                   ISD::LoadExtType ETy, EVT MemVT,
+                   MachineMemOperand *MMO)
+      : EVLLoadStoreSDNode(ISD::EVL_LOAD, Order, dl, VTs, MemVT, MMO) {
+    LoadSDNodeBits.ExtTy = ETy;
+    LoadSDNodeBits.IsExpanding = false;
+  }
+
+  ISD::LoadExtType getExtensionType() const {
+    return static_cast<ISD::LoadExtType>(LoadSDNodeBits.ExtTy);
+  }
+
+  const SDValue &getBasePtr() const { return getOperand(1); }
+  const SDValue &getMask() const    { return getOperand(2); }
+  const SDValue &getVectorLength() const { return getOperand(3); }
+
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::EVL_LOAD;
+  }
+  bool isExpandingLoad() const { return LoadSDNodeBits.IsExpanding; }
+};
+
+/// This class is used to represent an MSTORE node
+class EVLStoreSDNode : public EVLLoadStoreSDNode {
+public:
+  friend class SelectionDAG;
+
+  EVLStoreSDNode(unsigned Order, const DebugLoc &dl, SDVTList VTs,
+                    bool isTrunc, EVT MemVT,
+                    MachineMemOperand *MMO)
+      : EVLLoadStoreSDNode(ISD::EVL_STORE, Order, dl, VTs, MemVT, MMO) {
+    StoreSDNodeBits.IsTruncating = isTrunc;
+    StoreSDNodeBits.IsCompressing = false;
+  }
+
+  /// Return true if the op does a truncation before store.
+  /// For integers this is the same as doing a TRUNCATE and storing the result.
+  /// For floats, it is the same as doing an FP_ROUND and storing the result.
+  bool isTruncatingStore() const { return StoreSDNodeBits.IsTruncating; }
+
+  /// Returns true if the op does a compression to the vector before storing.
+  /// The node contiguously stores the active elements (integers or floats)
+  /// in src (those with their respective bit set in writemask k) to unaligned
+  /// memory at base_addr.
+  bool isCompressingStore() const { return StoreSDNodeBits.IsCompressing; }
+
+  const SDValue &getValue() const   { return getOperand(1); }
+  const SDValue &getBasePtr() const { return getOperand(2); }
+  const SDValue &getMask() const    { return getOperand(3); }
+  const SDValue &getVectorLength() const    { return getOperand(4); }
+
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::EVL_STORE;
   }
 };
 
