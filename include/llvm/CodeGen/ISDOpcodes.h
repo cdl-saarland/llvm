@@ -1079,6 +1079,19 @@ namespace ISD {
   /// SETCC_INVALID if it is not possible to represent the resultant comparison.
   CondCode getSetCCAndOperation(CondCode Op1, CondCode Op2, bool isInteger);
 
+  /// Return the mask operand of this EVL SDNode.
+  /// Otw, return -1.
+  int GetMaskPosEVL(unsigned OpCode);
+
+  /// Return the vector length operand of this EVL SDNode.
+  /// Otw, return -1.
+  int GetVectorLengthPosEVL(unsigned OpCode);
+
+  /// Translate this EVL OpCode to a native instruction OpCode.
+  unsigned GetFunctionOpCodeForEVL(unsigned EVLOpCode);
+
+  unsigned GetEVLForFunctionOpCode(unsigned OpCode);
+
 } // end llvm::ISD namespace
 
 } // end llvm namespace

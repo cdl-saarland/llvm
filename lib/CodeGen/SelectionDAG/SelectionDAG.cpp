@@ -429,6 +429,183 @@ ISD::CondCode ISD::getSetCCAndOperation(ISD::CondCode Op1, ISD::CondCode Op2,
 }
 
 //===----------------------------------------------------------------------===//
+//                           SDNode EVL Support
+//===----------------------------------------------------------------------===//
+
+int
+ISD::GetMaskPosEVL(unsigned OpCode) {
+  switch (OpCode) {
+    default: return -1;
+
+    case ISD::EVL_FNEG:
+      return 1;
+
+    case ISD::EVL_ADD:
+    case ISD::EVL_SUB:
+    case ISD::EVL_MUL:
+    case ISD::EVL_SDIV:
+    case ISD::EVL_SREM:
+    case ISD::EVL_UDIV:
+    case ISD::EVL_UREM:
+
+    case ISD::EVL_AND:
+    case ISD::EVL_OR:
+    case ISD::EVL_XOR:
+    case ISD::EVL_SHL:
+    case ISD::EVL_SRA:
+    case ISD::EVL_SRL:
+    case ISD::EVL_FDIV:
+    case ISD::EVL_FREM:
+
+    case ISD::EVL_FADD:
+    case ISD::EVL_FMUL:
+      return 2;
+
+    case ISD::EVL_FMA:
+    case ISD::EVL_SELECT:
+      return 3;
+
+    case EVL_REDUCE_FADD:
+    case EVL_REDUCE_FMUL:
+    case EVL_REDUCE_ADD:
+    case EVL_REDUCE_MUL:
+    case EVL_REDUCE_AND:
+    case EVL_REDUCE_OR:
+    case EVL_REDUCE_XOR:
+    case EVL_REDUCE_SMAX:
+    case EVL_REDUCE_SMIN:
+    case EVL_REDUCE_UMAX:
+    case EVL_REDUCE_UMIN:
+    case VECREDUCE_FMAX:
+    case VECREDUCE_FMIN:
+    case EVL_REDUCE_FMAX:
+    case EVL_REDUCE_FMIN:
+      return 1;
+
+    /// FMIN/FMAX nodes can have flags, for NaN/NoNaN variants.
+    // (implicit) case ISD::EVL_COMPOSE: return -1
+  }
+}
+
+int
+ISD::GetVectorLengthPosEVL(unsigned OpCode) {
+  switch (OpCode) {
+    default: return -1;
+
+    case ISD::EVL_SELECT:
+      return 0;
+
+    case ISD::EVL_FNEG:
+      return 2;
+
+    case ISD::EVL_ADD:
+    case ISD::EVL_SUB:
+    case ISD::EVL_MUL:
+    case ISD::EVL_SDIV:
+    case ISD::EVL_SREM:
+    case ISD::EVL_UDIV:
+    case ISD::EVL_UREM:
+
+    case ISD::EVL_AND:
+    case ISD::EVL_OR:
+    case ISD::EVL_XOR:
+    case ISD::EVL_SHL:
+    case ISD::EVL_SRA:
+    case ISD::EVL_SRL:
+
+    case ISD::EVL_FADD:
+    case ISD::EVL_FMUL:
+    case ISD::EVL_FDIV:
+    case ISD::EVL_FREM:
+      return 3;
+
+    case ISD::EVL_FMA:
+      return 4;
+
+    case ISD::EVL_COMPOSE:
+      return 3;
+
+    case EVL_REDUCE_FADD:
+    case EVL_REDUCE_FMUL:
+    case EVL_REDUCE_ADD:
+    case EVL_REDUCE_MUL:
+    case EVL_REDUCE_AND:
+    case EVL_REDUCE_OR:
+    case EVL_REDUCE_XOR:
+    case EVL_REDUCE_SMAX:
+    case EVL_REDUCE_SMIN:
+    case EVL_REDUCE_UMAX:
+    case EVL_REDUCE_UMIN:
+    case EVL_REDUCE_FMAX:
+    case EVL_REDUCE_FMIN:
+      return 2;
+  }
+}
+
+unsigned
+ISD::GetFunctionOpCodeForEVL(unsigned OpCode) {
+  switch (OpCode) {
+    default: return OpCode;
+
+    case ISD::EVL_SELECT: return ISD::VSELECT;
+    case ISD::EVL_FNEG:   return ISD::FNEG;
+    case ISD::EVL_ADD:    return ISD::ADD;
+    case ISD::EVL_SUB:    return ISD::SUB;
+    case ISD::EVL_MUL:    return ISD::MUL;
+    case ISD::EVL_SDIV:   return ISD::SDIV;
+    case ISD::EVL_SREM:   return ISD::SREM;
+    case ISD::EVL_UDIV:   return ISD::UDIV;
+    case ISD::EVL_UREM:   return ISD::UREM;
+
+    case ISD::EVL_AND:    return ISD::AND;
+    case ISD::EVL_OR:     return ISD::OR;
+    case ISD::EVL_XOR:    return ISD::XOR;
+    case ISD::EVL_SHL:    return ISD::SHL;
+    case ISD::EVL_SRA:    return ISD::SRA;
+    case ISD::EVL_SRL:    return ISD::SRL;
+    case ISD::EVL_FDIV:   return ISD::FDIV;
+    case ISD::EVL_FREM:   return ISD::FREM;
+
+    case ISD::EVL_FADD:   return ISD::FADD;
+    case ISD::EVL_FMUL:   return ISD::FMUL;
+
+    case ISD::EVL_FMA:    return ISD::FMA;
+  }
+}
+
+unsigned
+ISD::GetEVLForFunctionOpCode(unsigned OpCode) {
+  switch (OpCode) {
+    default: llvm_unreachable("can not translate this Opcode to EVL");
+
+    case ISD::VSELECT:return ISD::EVL_SELECT;
+    case ISD::FNEG:   return ISD::EVL_FNEG;
+    case ISD::ADD:    return ISD::EVL_ADD;
+    case ISD::SUB:    return ISD::EVL_SUB;
+    case ISD::MUL:    return ISD::EVL_MUL;
+    case ISD::SDIV:   return ISD::EVL_SDIV;
+    case ISD::SREM:   return ISD::EVL_SREM;
+    case ISD::UDIV:   return ISD::EVL_UDIV;
+    case ISD::UREM:   return ISD::EVL_UREM;
+
+    case ISD::AND:    return ISD::EVL_AND;
+    case ISD::OR:     return ISD::EVL_OR;
+    case ISD::XOR:    return ISD::EVL_XOR;
+    case ISD::SHL:    return ISD::EVL_SHL;
+    case ISD::SRA:    return ISD::EVL_SRA;
+    case ISD::SRL:    return ISD::EVL_SRL;
+    case ISD::FDIV:   return ISD::EVL_FDIV;
+    case ISD::FREM:   return ISD::EVL_FREM;
+
+    case ISD::FADD:   return ISD::EVL_FADD;
+    case ISD::FMUL:   return ISD::EVL_FMUL;
+
+    case ISD::FMA:    return ISD::EVL_FMA;
+  }
+}
+
+
+//===----------------------------------------------------------------------===//
 //                           SDNode Profile Support
 //===----------------------------------------------------------------------===//
 
