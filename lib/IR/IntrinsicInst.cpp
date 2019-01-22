@@ -186,6 +186,20 @@ bool EVLIntrinsic::isBinaryOp() const {
     case Intrinsic::evl_fdiv:
     case Intrinsic::evl_frem:
 
+    case Intrinsic::evl_reduce_or:
+    case Intrinsic::evl_reduce_xor:
+    case Intrinsic::evl_reduce_add:
+    case Intrinsic::evl_reduce_mul:
+    case Intrinsic::evl_reduce_smax:
+    case Intrinsic::evl_reduce_smin:
+    case Intrinsic::evl_reduce_umax:
+    case Intrinsic::evl_reduce_umin:
+
+    case Intrinsic::evl_reduce_fadd:
+    case Intrinsic::evl_reduce_fmul:
+    case Intrinsic::evl_reduce_fmax:
+    case Intrinsic::evl_reduce_fmin:
+
     case Intrinsic::evl_add:
     case Intrinsic::evl_sub:
     case Intrinsic::evl_mul:

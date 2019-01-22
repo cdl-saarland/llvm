@@ -1071,73 +1071,74 @@ def int_evl_scatter: Intrinsic<[],
                                [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
 // Reductions
-def int_evl_reduce_fadd : Intrinsic<[llvm_anyfloat_ty],
-                                    [llvm_anyfloat_ty,
+let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
+def int_evl_reduce_add  : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<2, llvm_i1_ty>,
-                                     llvm_i32_ty],
-                                    [IntrNoMem, IntrSpeculatable, Mask<2>, VectorLength<3>]>;
-def int_evl_reduce_fmul : Intrinsic<[llvm_anyfloat_ty],
-                                    [llvm_anyfloat_ty,
-                                     llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<2, llvm_i1_ty>,
-                                     llvm_i32_ty],
-                                    [IntrNoMem, Mask<2>, VectorLength<3>]>;
-def int_evl_reduce_add : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                   [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_mul : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                   [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_and : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                   [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_or : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                  [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_xor : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                   [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_smax : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                    [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_smin : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                    [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_umax : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                    [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_umin : Intrinsic<[llvm_anyint_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<0, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                    [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_fmax : Intrinsic<[llvm_anyfloat_ty],
-                                   [llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                    llvm_i32_ty],
-                                    [IntrNoMem, Mask<1>, VectorLength<2>]>;
-def int_evl_reduce_fmin : Intrinsic<[llvm_anyfloat_ty],
-                                    [llvm_anyvector_ty,
                                      LLVMVectorSameWidth<1, llvm_i1_ty>,
-                                     llvm_i32_ty],
-                                    [IntrNoMem, Mask<1>, VectorLength<2>]>;
+                                     llvm_i32_ty]>;
+def int_evl_reduce_mul  : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_and  : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_or   : Intrinsic<[llvm_anyint_ty],
+                                   [LLVMMatchType<0>,
+                                    llvm_anyvector_ty,
+                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                    llvm_i32_ty]>;
+def int_evl_reduce_xor  : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_smax : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_smin : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_umax : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_umin : Intrinsic<[llvm_anyint_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+
+def int_evl_reduce_fadd : Intrinsic<[llvm_anyfloat_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_fmul : Intrinsic<[llvm_anyfloat_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_fmax : Intrinsic<[llvm_anyfloat_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+def int_evl_reduce_fmin : Intrinsic<[llvm_anyfloat_ty],
+                                    [LLVMMatchType<0>,
+                                     llvm_anyvector_ty,
+                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     llvm_i32_ty]>;
+}
 
 // Binary operators
 let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
