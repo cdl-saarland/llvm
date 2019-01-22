@@ -2491,6 +2491,67 @@ public:
 };
 
 /// This is a base class used to represent
+/// EVL_GATHER and EVL_SCATTER nodes
+///
+class EVLGatherScatterSDNode : public MemSDNode {
+public:
+  friend class SelectionDAG;
+
+  EVLGatherScatterSDNode(ISD::NodeType NodeTy, unsigned Order,
+                            const DebugLoc &dl, SDVTList VTs, EVT MemVT,
+                            MachineMemOperand *MMO)
+      : MemSDNode(NodeTy, Order, dl, VTs, MemVT, MMO) {}
+
+  // In the both nodes address is Op1, mask is Op2:
+  // EVLGatherSDNode  (Chain, base, index, scale, mask, vlen)
+  // EVLScatterSDNode (Chain, value, base, index, sckae, mask, vlen)
+  // Mask is a vector of i1 elements
+  const SDValue &getBasePtr() const { return getOperand((getOpcode() == ISD::EVL_GATHER) ? 1 : 2); }
+  const SDValue &getIndex()   const { return getOperand((getOpcode() == ISD::EVL_GATHER) ? 2 : 3); }
+  const SDValue &getScale()   const { return getOperand((getOpcode() == ISD::EVL_GATHER) ? 3 : 4); }
+  const SDValue &getMask()    const { return getOperand((getOpcode() == ISD::EVL_GATHER) ? 4 : 5); }
+  const SDValue &getVectorLength()    const { return getOperand((getOpcode() == ISD::EVL_GATHER) ? 5 : 6); }
+
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::EVL_GATHER ||
+           N->getOpcode() == ISD::EVL_SCATTER;
+  }
+};
+
+/// This class is used to represent an EVL_GATHER node
+///
+class EVLGatherSDNode : public EVLGatherScatterSDNode {
+public:
+  friend class SelectionDAG;
+
+  EVLGatherSDNode(unsigned Order, const DebugLoc &dl, SDVTList VTs,
+                     EVT MemVT, MachineMemOperand *MMO)
+      : EVLGatherScatterSDNode(ISD::EVL_GATHER, Order, dl, VTs, MemVT, MMO) {}
+
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::EVL_GATHER;
+  }
+};
+
+/// This class is used to represent an EVL_SCATTER node
+///
+class EVLScatterSDNode : public EVLGatherScatterSDNode {
+public:
+  friend class SelectionDAG;
+
+  EVLScatterSDNode(unsigned Order, const DebugLoc &dl, SDVTList VTs,
+                      EVT MemVT, MachineMemOperand *MMO)
+      : EVLGatherScatterSDNode(ISD::EVL_SCATTER, Order, dl, VTs, MemVT, MMO) {}
+
+  const SDValue &getValue() const { return getOperand(1); }
+
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::EVL_SCATTER;
+  }
+};
+
+
+/// This is a base class used to represent
 /// MGATHER and MSCATTER nodes
 ///
 class MaskedGatherScatterSDNode : public MemSDNode {

@@ -4587,6 +4587,102 @@ void SelectionDAGBuilder::visitMaskedGather(const CallInst &I) {
   setValue(&I, Gather);
 }
 
+void SelectionDAGBuilder::visitGatherEVL(const CallInst &I) {
+  SDLoc sdl = getCurSDLoc();
+
+  // @llvm.evl.gather.*(Ptrs, Mask, VLen)
+  const Value *Ptr = I.getArgOperand(0);
+  SDValue Mask = getValue(I.getArgOperand(1));
+  SDValue VLen = getValue(I.getArgOperand(2));
+
+  const TargetLowering &TLI = DAG.getTargetLoweringInfo();
+  EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+  unsigned Alignment = 0;  // TODO infer alignment //(cast<ConstantInt>(I.getArgOperand(1)))->getZExtValue();
+  if (!Alignment)
+    Alignment = DAG.getEVTAlignment(VT);
+
+  AAMDNodes AAInfo;
+  I.getAAMetadata(AAInfo);
+  const MDNode *Ranges = I.getMetadata(LLVMContext::MD_range);
+
+  SDValue Root = DAG.getRoot();
+  SDValue Base;
+  SDValue Index;
+  SDValue Scale;
+  const Value *BasePtr = Ptr;
+  bool UniformBase = getUniformBase(BasePtr, Base, Index, Scale, this);
+  bool ConstantMemory = false;
+  if (UniformBase && AA &&
+      AA->pointsToConstantMemory(
+          MemoryLocation(BasePtr,
+                         LocationSize::precise(
+                             DAG.getDataLayout().getTypeStoreSize(I.getType())),
+                         AAInfo))) {
+    // Do not serialize (non-volatile) loads of constant memory with anything.
+    Root = DAG.getEntryNode();
+    ConstantMemory = true;
+  }
+
+  MachineMemOperand *MMO =
+    DAG.getMachineFunction().
+    getMachineMemOperand(MachinePointerInfo(UniformBase ? BasePtr : nullptr),
+                         MachineMemOperand::MOLoad,  VT.getStoreSize(),
+                         Alignment, AAInfo, Ranges);
+
+  if (!UniformBase) {
+    Base = DAG.getConstant(0, sdl, TLI.getPointerTy(DAG.getDataLayout()));
+    Index = getValue(Ptr);
+    Scale = DAG.getTargetConstant(1, sdl, TLI.getPointerTy(DAG.getDataLayout()));
+  }
+  SDValue Ops[] = { Root, Base, Index, Scale, Mask, VLen };
+  SDValue Gather = DAG.getGatherEVL(DAG.getVTList(VT, MVT::Other), VT, sdl, Ops, MMO);
+
+  SDValue OutChain = Gather.getValue(1);
+  if (!ConstantMemory)
+    PendingLoads.push_back(OutChain);
+  setValue(&I, Gather);
+}
+
+void SelectionDAGBuilder::visitScatterEVL(const CallInst &I) {
+  SDLoc sdl = getCurSDLoc();
+
+  // llvm.evl.scatter.*(Src0, Ptrs, Mask, VLen)
+  const Value *Ptr = I.getArgOperand(1);
+  SDValue Src0 = getValue(I.getArgOperand(0));
+  SDValue Mask = getValue(I.getArgOperand(2));
+  SDValue VLen = getValue(I.getArgOperand(3));
+  EVT VT = Src0.getValueType();
+  unsigned Alignment = 0; // TODO infer alignmen t(cast<ConstantInt>(I.getArgOperand(2)))->getZExtValue();
+  if (!Alignment)
+    Alignment = DAG.getEVTAlignment(VT);
+  const TargetLowering &TLI = DAG.getTargetLoweringInfo();
+
+  AAMDNodes AAInfo;
+  I.getAAMetadata(AAInfo);
+
+  SDValue Base;
+  SDValue Index;
+  SDValue Scale;
+  const Value *BasePtr = Ptr;
+  bool UniformBase = getUniformBase(BasePtr, Base, Index, Scale, this);
+
+  const Value *MemOpBasePtr = UniformBase ? BasePtr : nullptr;
+  MachineMemOperand *MMO = DAG.getMachineFunction().
+    getMachineMemOperand(MachinePointerInfo(MemOpBasePtr),
+                         MachineMemOperand::MOStore,  VT.getStoreSize(),
+                         Alignment, AAInfo);
+  if (!UniformBase) {
+    Base = DAG.getConstant(0, sdl, TLI.getPointerTy(DAG.getDataLayout()));
+    Index = getValue(Ptr);
+    Scale = DAG.getTargetConstant(1, sdl, TLI.getPointerTy(DAG.getDataLayout()));
+  }
+  SDValue Ops[] = { getRoot(), Src0, Base, Index, Scale, Mask, VLen };
+  SDValue Scatter = DAG.getScatterEVL(DAG.getVTList(MVT::Other), VT, sdl,
+                                         Ops, MMO);
+  DAG.setRoot(Scatter);
+  setValue(&I, Scatter);
+}
+
 void SelectionDAGBuilder::visitLoadEVL(const CallInst &I) {
   SDLoc sdl = getCurSDLoc();
 
@@ -6207,11 +6303,8 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
 
   case Intrinsic::evl_load:
   case Intrinsic::evl_store:
-#if 0
-  // TODO translate to SDNodes
   case Intrinsic::evl_gather:
   case Intrinsic::evl_scatter:
-#endif
 
   case Intrinsic::evl_fneg:
 
@@ -7100,12 +7193,10 @@ void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
   default:
     llvm_unreachable("Unforeseen intrinsic");  // Can't reach here.
 
-  case Intrinsic::evl_gather:
-  case Intrinsic::evl_scatter:
-    llvm_unreachable("TODO implement SDNode lowering");
-
   case Intrinsic::evl_load: visitLoadEVL(EVLInst); return;
   case Intrinsic::evl_store: visitStoreEVL(EVLInst); return;
+  case Intrinsic::evl_gather: visitGatherEVL(EVLInst); return;
+  case Intrinsic::evl_scatter: visitScatterEVL(EVLInst); return;
 
   case Intrinsic::evl_cmp: visitCmpEVL(EVLInst); return;
 

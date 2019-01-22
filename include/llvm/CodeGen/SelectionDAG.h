@@ -1108,10 +1108,10 @@ public:
                          SDValue Ptr, SDValue Mask, SDValue VLen,
                          EVT MemVT, MachineMemOperand *MMO,
                          bool IsTruncating = false);
-  //SDValue getMaskedGatherEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
-  //                        ArrayRef<SDValue> Ops, MachineMemOperand *MMO);
-  //SDValue getMaskedScatterEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
-  //                         ArrayRef<SDValue> Ops, MachineMemOperand *MMO);
+  SDValue getGatherEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+                          ArrayRef<SDValue> Ops, MachineMemOperand *MMO);
+  SDValue getScatterEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+                           ArrayRef<SDValue> Ops, MachineMemOperand *MMO);
 
   /// Returns sum of the base pointer and offset.
   SDValue getMemBasePlusOffset(SDValue Base, unsigned Offset, const SDLoc &DL);

@@ -735,6 +735,34 @@ static void AddNodeIDCustom(FoldingSetNodeID &ID, const SDNode *N) {
     ID.AddInteger(ST->getPointerInfo().getAddrSpace());
     break;
   }
+  case ISD::EVL_LOAD: {
+    const EVLLoadSDNode *ELD = cast<EVLLoadSDNode>(N);
+    ID.AddInteger(ELD->getMemoryVT().getRawBits());
+    ID.AddInteger(ELD->getRawSubclassData());
+    ID.AddInteger(ELD->getPointerInfo().getAddrSpace());
+    break;
+  }
+  case ISD::EVL_STORE: {
+    const EVLStoreSDNode *EST = cast<EVLStoreSDNode>(N);
+    ID.AddInteger(EST->getMemoryVT().getRawBits());
+    ID.AddInteger(EST->getRawSubclassData());
+    ID.AddInteger(EST->getPointerInfo().getAddrSpace());
+    break;
+  }
+  case ISD::EVL_GATHER: {
+    const EVLGatherSDNode *EG = cast<EVLGatherSDNode>(N);
+    ID.AddInteger(EG->getMemoryVT().getRawBits());
+    ID.AddInteger(EG->getRawSubclassData());
+    ID.AddInteger(EG->getPointerInfo().getAddrSpace());
+    break;
+  }
+  case ISD::EVL_SCATTER: {
+    const EVLScatterSDNode *ES = cast<EVLScatterSDNode>(N);
+    ID.AddInteger(ES->getMemoryVT().getRawBits());
+    ID.AddInteger(ES->getRawSubclassData());
+    ID.AddInteger(ES->getPointerInfo().getAddrSpace());
+    break;
+  }
   case ISD::MLOAD: {
     const MaskedLoadSDNode *MLD = cast<MaskedLoadSDNode>(N);
     ID.AddInteger(MLD->getMemoryVT().getRawBits());
@@ -7052,6 +7080,80 @@ SDValue SelectionDAG::getStoreEVL(SDValue Chain, const SDLoc &dl,
   return V;
 }
 
+SDValue SelectionDAG::getGatherEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+                                      ArrayRef<SDValue> Ops,
+                                      MachineMemOperand *MMO) {
+  assert(Ops.size() == 6 && "Incompatible number of operands");
+
+  FoldingSetNodeID ID;
+  AddNodeIDNode(ID, ISD::EVL_GATHER, VTs, Ops);
+  ID.AddInteger(VT.getRawBits());
+  ID.AddInteger(getSyntheticNodeSubclassData<MaskedGatherSDNode>(
+      dl.getIROrder(), VTs, VT, MMO));
+  ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
+  void *IP = nullptr;
+  if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
+    cast<EVLGatherSDNode>(E)->refineAlignment(MMO);
+    return SDValue(E, 0);
+  }
+
+  auto *N = newSDNode<EVLGatherSDNode>(dl.getIROrder(), dl.getDebugLoc(),
+                                          VTs, VT, MMO);
+  createOperands(N, Ops);
+
+  assert(N->getMask().getValueType().getVectorNumElements() ==
+             N->getValueType(0).getVectorNumElements() &&
+         "Vector width mismatch between mask and data");
+  assert(N->getIndex().getValueType().getVectorNumElements() >=
+             N->getValueType(0).getVectorNumElements() &&
+         "Vector width mismatch between index and data");
+  assert(isa<ConstantSDNode>(N->getScale()) &&
+         cast<ConstantSDNode>(N->getScale())->getAPIntValue().isPowerOf2() &&
+         "Scale should be a constant power of 2");
+
+  CSEMap.InsertNode(N, IP);
+  InsertNode(N);
+  SDValue V(N, 0);
+  NewSDValueDbgMsg(V, "Creating new node: ", this);
+  return V;
+}
+
+SDValue SelectionDAG::getScatterEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+                                       ArrayRef<SDValue> Ops,
+                                       MachineMemOperand *MMO) {
+  assert(Ops.size() == 6 && "Incompatible number of operands");
+
+  FoldingSetNodeID ID;
+  AddNodeIDNode(ID, ISD::EVL_SCATTER, VTs, Ops);
+  ID.AddInteger(VT.getRawBits());
+  ID.AddInteger(getSyntheticNodeSubclassData<MaskedScatterSDNode>(
+      dl.getIROrder(), VTs, VT, MMO));
+  ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
+  void *IP = nullptr;
+  if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
+    cast<EVLScatterSDNode>(E)->refineAlignment(MMO);
+    return SDValue(E, 0);
+  }
+  auto *N = newSDNode<EVLScatterSDNode>(dl.getIROrder(), dl.getDebugLoc(),
+                                           VTs, VT, MMO);
+  createOperands(N, Ops);
+
+  assert(N->getMask().getValueType().getVectorNumElements() ==
+             N->getValue().getValueType().getVectorNumElements() &&
+         "Vector width mismatch between mask and data");
+  assert(N->getIndex().getValueType().getVectorNumElements() >=
+             N->getValue().getValueType().getVectorNumElements() &&
+         "Vector width mismatch between index and data");
+  assert(isa<ConstantSDNode>(N->getScale()) &&
+         cast<ConstantSDNode>(N->getScale())->getAPIntValue().isPowerOf2() &&
+         "Scale should be a constant power of 2");
+
+  CSEMap.InsertNode(N, IP);
+  InsertNode(N);
+  SDValue V(N, 0);
+  NewSDValueDbgMsg(V, "Creating new node: ", this);
+  return V;
+}
 SDValue SelectionDAG::getMaskedStore(SDValue Chain, const SDLoc &dl,
                                      SDValue Val, SDValue Ptr, SDValue Mask,
                                      EVT MemVT, MachineMemOperand *MMO,
