@@ -1049,7 +1049,7 @@ def int_evl_store : Intrinsic<[],
                                 LLVMAnyPointerType<LLVMMatchType<0>>,
                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
-                              [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
+                              [ IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
 def int_evl_load  : Intrinsic<[ llvm_anyvector_ty],
                               [ LLVMAnyPointerType<LLVMMatchType<0>>,
@@ -1068,7 +1068,7 @@ def int_evl_scatter: Intrinsic<[],
                                  LLVMVectorOfAnyPointersToElt<0>,
                                  LLVMVectorSameWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty],
-                               [ NoCapture<1>, IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
+                               [ IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
 // Reductions
 let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {

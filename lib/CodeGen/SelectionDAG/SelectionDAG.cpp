@@ -7121,7 +7121,7 @@ SDValue SelectionDAG::getGatherEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
 SDValue SelectionDAG::getScatterEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
                                        ArrayRef<SDValue> Ops,
                                        MachineMemOperand *MMO) {
-  assert(Ops.size() == 6 && "Incompatible number of operands");
+  assert(Ops.size() == 7 && "Incompatible number of operands");
 
   FoldingSetNodeID ID;
   AddNodeIDNode(ID, ISD::EVL_SCATTER, VTs, Ops);
