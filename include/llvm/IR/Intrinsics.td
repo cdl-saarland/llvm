@@ -1286,11 +1286,11 @@ def int_evl_compress: Intrinsic<[ llvm_anyvector_ty ],
 
 // Select
 def int_evl_select : Intrinsic<[ llvm_anyvector_ty ],
-                               [ LLVMMatchType<0>,
+                               [ LLVMVectorSameWidth<0, llvm_i1_ty>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMMatchType<0>,
                                  llvm_i32_ty],
-                               [ IntrNoMem, Passthru<1>, Mask<2>, VectorLength<3> ]>;
+                               [ IntrNoMem, Passthru<2>, Mask<0>, VectorLength<3> ]>;
 
 // Compose
 def int_evl_compose : Intrinsic<[ llvm_anyvector_ty ],
