@@ -212,40 +212,48 @@ EVLBuilder::getVectorType(Type &ElementTy) {
 }
 
 Value&
-EVLBuilder::CreateContiguousStore(Value & Val, Value & Pointer) {
+EVLBuilder::CreateContiguousStore(Value & Val, Value & Pointer, unsigned Alignment) {
   auto & VecTy = cast<VectorType>(*Val.getType());
   auto * StoreFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_store, {Val.getType(), Pointer.getType()});
   ShortValueVec Args{&Val, &Pointer, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
-  return *Builder.CreateCall(StoreFunc, Args);
+  CallInst &StoreCall = *Builder.CreateCall(StoreFunc, Args);
+  if (Alignment) StoreCall.addParamAttr(1, Attribute::getWithAlignment(getContext(), Alignment));
+  return StoreCall;
 }
 
 Value&
-EVLBuilder::CreateContiguousLoad(Value & Pointer) {
+EVLBuilder::CreateContiguousLoad(Value & Pointer, unsigned Alignment) {
   auto & PointerTy = cast<PointerType>(*Pointer.getType());
   auto & VecTy = getVectorType(*PointerTy.getPointerElementType());
 
   auto * LoadFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_load, {&VecTy, &PointerTy});
   ShortValueVec Args{&Pointer, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
-  return *Builder.CreateCall(LoadFunc, Args);
+  CallInst &LoadCall= *Builder.CreateCall(LoadFunc, Args);
+  if (Alignment) LoadCall.addParamAttr(1, Attribute::getWithAlignment(getContext(), Alignment));
+  return LoadCall;
 }
 
 Value&
-EVLBuilder::CreateScatter(Value & Val, Value & PointerVec) {
+EVLBuilder::CreateScatter(Value & Val, Value & PointerVec, unsigned Alignment) {
   auto & VecTy = cast<VectorType>(*Val.getType());
   auto * ScatterFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_scatter, {Val.getType(), PointerVec.getType()});
   ShortValueVec Args{&Val, &PointerVec, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
-  return *Builder.CreateCall(ScatterFunc, Args);
+  CallInst &ScatterCall = *Builder.CreateCall(ScatterFunc, Args);
+  if (Alignment) ScatterCall.addParamAttr(1, Attribute::getWithAlignment(getContext(), Alignment));
+  return ScatterCall;
 }
 
 Value&
-EVLBuilder::CreateGather(Value & PointerVec) {
+EVLBuilder::CreateGather(Value & PointerVec, unsigned Alignment) {
   auto & PointerVecTy = cast<VectorType>(*PointerVec.getType());
   auto & ElemTy = *cast<PointerType>(*PointerVecTy.getVectorElementType()).getPointerElementType();
   auto & VecTy = *VectorType::get(&ElemTy, PointerVecTy.getNumElements());
   auto * GatherFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_gather, {&VecTy, &PointerVecTy});
 
   ShortValueVec Args{&PointerVec, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
-  return *Builder.CreateCall(GatherFunc, Args);
+  CallInst &GatherCall = *Builder.CreateCall(GatherFunc, Args);
+  if (Alignment) GatherCall.addParamAttr(1, Attribute::getWithAlignment(getContext(), Alignment));
+  return GatherCall;
 }
 
 } // namespace llvm

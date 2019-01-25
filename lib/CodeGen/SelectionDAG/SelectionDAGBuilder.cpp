@@ -4333,18 +4333,18 @@ void SelectionDAGBuilder::visitStoreEVL(const CallInst &I) {
   SDLoc sdl = getCurSDLoc();
 
   auto getEVLStoreOps = [&](Value* &Ptr, Value* &Mask, Value* &Src0,
-                            Value * &VLen) {
+                            Value * &VLen, unsigned & Alignment) {
     // llvm.masked.store.*(Src0, Ptr, Mask, VLen)
     Src0 = I.getArgOperand(0);
     Ptr = I.getArgOperand(1);
+    Alignment = I.getParamAlignment(1);
     Mask = I.getArgOperand(2);
     VLen = I.getArgOperand(3);
   };
 
   Value  *PtrOperand, *MaskOperand, *Src0Operand, *VLenOperand;
-  getEVLStoreOps(PtrOperand, MaskOperand, Src0Operand, VLenOperand);
-
-  unsigned Alignment = 0; // TODO infer alignment
+  unsigned Alignment = 0;
+  getEVLStoreOps(PtrOperand, MaskOperand, Src0Operand, VLenOperand, Alignment);
 
   SDValue Ptr = getValue(PtrOperand);
   SDValue Src0 = getValue(Src0Operand);
@@ -4597,7 +4597,7 @@ void SelectionDAGBuilder::visitGatherEVL(const CallInst &I) {
 
   const TargetLowering &TLI = DAG.getTargetLoweringInfo();
   EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
-  unsigned Alignment = 0;  // TODO infer alignment //(cast<ConstantInt>(I.getArgOperand(1)))->getZExtValue();
+  unsigned Alignment = I.getParamAlignment(0);
   if (!Alignment)
     Alignment = DAG.getEVTAlignment(VT);
 
@@ -4652,7 +4652,7 @@ void SelectionDAGBuilder::visitScatterEVL(const CallInst &I) {
   SDValue Mask = getValue(I.getArgOperand(2));
   SDValue VLen = getValue(I.getArgOperand(3));
   EVT VT = Src0.getValueType();
-  unsigned Alignment = 0; // TODO infer alignmen t(cast<ConstantInt>(I.getArgOperand(2)))->getZExtValue();
+  unsigned Alignment = I.getParamAlignment(1);
   if (!Alignment)
     Alignment = DAG.getEVTAlignment(VT);
   const TargetLowering &TLI = DAG.getTargetLoweringInfo();
@@ -4690,7 +4690,7 @@ void SelectionDAGBuilder::visitLoadEVL(const CallInst &I) {
                            unsigned& Alignment) {
     // @llvm.evl.load.*(Ptr, Mask, Vlen)
     Ptr = I.getArgOperand(0);
-    Alignment = 0; // TODO infer alignment //Alignment = cast<ConstantInt>(I.getArgOperand(1))->getZExtValue();
+    Alignment = I.getParamAlignment(0);
     Mask = I.getArgOperand(1);
     VLen = I.getArgOperand(2);
   };

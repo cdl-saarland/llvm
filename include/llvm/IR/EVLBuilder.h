@@ -49,6 +49,7 @@ public:
   {}
 
   Module & getModule() const;
+  LLVMContext & getContext() const { return Builder.getContext(); }
 
   // The cannonical vector type for this \p ElementTy
   VectorType& getVectorType(Type &ElementTy);
@@ -64,18 +65,11 @@ public:
   // This operation may return nullptr if the instruction could not be vectorized.
   Value* CreateVectorCopy(Instruction & Inst, ValArray VecOpArray);
 
-  Value& CreateGEP(ValArray VecOpArray);
-
-  Value& CreateFAdd(ValArray VecOpArray);
-  Value& CreateFDiv(ValArray VecOpArray);
-  Value& CreateFMul(ValArray VecOpArray);
-  Value& CreateFSub(ValArray VecOpArray);
-
   // Memory
-  Value& CreateContiguousStore(Value & Val, Value & Pointer);
-  Value& CreateContiguousLoad(Value & Pointer);
-  Value& CreateScatter(Value & Val, Value & PointerVec);
-  Value& CreateGather(Value & PointerVec);
+  Value& CreateContiguousStore(Value & Val, Value & Pointer, unsigned Alignment=0);
+  Value& CreateContiguousLoad(Value & Pointer, unsigned Alignment=0);
+  Value& CreateScatter(Value & Val, Value & PointerVec, unsigned Alignment=0);
+  Value& CreateGather(Value & PointerVec, unsigned Alignment=0);
 };
 
 
