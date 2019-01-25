@@ -1047,26 +1047,26 @@ def int_is_constant : Intrinsic<[llvm_i1_ty], [llvm_any_ty], [IntrNoMem], "llvm.
 def int_evl_store : Intrinsic<[],
                               [ llvm_anyvector_ty,
                                 LLVMAnyPointerType<LLVMMatchType<0>>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
                               [ IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
 def int_evl_load  : Intrinsic<[ llvm_anyvector_ty],
                               [ LLVMAnyPointerType<LLVMMatchType<0>>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
                               [ IntrReadMem, IntrArgMemOnly, Mask<1>, VectorLength<2> ]>;
 
 def int_evl_gather: Intrinsic<[ llvm_anyvector_ty],
                               [ LLVMVectorOfAnyPointersToElt<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
                               [ IntrReadMem, IntrReadMem, Mask<1>, VectorLength<2> ]>;
 
 def int_evl_scatter: Intrinsic<[],
                                [ llvm_anyvector_ty,
                                  LLVMVectorOfAnyPointersToElt<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty],
                                [ IntrArgMemOnly, Mask<2>, VectorLength<3> ]>;
 
@@ -1075,68 +1075,68 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
 def int_evl_reduce_add  : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_mul  : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_and  : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_or   : Intrinsic<[llvm_anyint_ty],
                                    [LLVMMatchType<0>,
                                     llvm_anyvector_ty,
-                                    LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                    LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                     llvm_i32_ty]>;
 def int_evl_reduce_xor  : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_smax : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_smin : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_umax : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_umin : Intrinsic<[llvm_anyint_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 
 def int_evl_reduce_fadd : Intrinsic<[llvm_anyfloat_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_fmul : Intrinsic<[llvm_anyfloat_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_fmax : Intrinsic<[llvm_anyfloat_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 def int_evl_reduce_fmin : Intrinsic<[llvm_anyfloat_ty],
                                     [LLVMMatchType<0>,
                                      llvm_anyvector_ty,
-                                     LLVMVectorSameWidth<1, llvm_i1_ty>,
+                                     LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
                                      llvm_i32_ty]>;
 }
 
@@ -1145,95 +1145,95 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
   def int_evl_add : Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty]>;
   def int_evl_sub : Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty]>;
   def int_evl_mul  : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_sdiv : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_udiv : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_srem : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_urem : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
 
   def int_evl_fadd : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_fsub : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_fmul : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_fdiv : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_frem : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
 
 // Logical operators
   def int_evl_ashr : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_lshr : Intrinsic<[ llvm_anyvector_ty ],
                                [ LLVMMatchType<0>,
                                  LLVMMatchType<0>,
-                                 LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                 LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  llvm_i32_ty]>;
   def int_evl_shl : Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty]>;
   def int_evl_or : Intrinsic<[ llvm_anyvector_ty ],
                              [ LLVMMatchType<0>,
                                LLVMMatchType<0>,
-                               LLVMVectorSameWidth<0, llvm_i1_ty>,
+                               LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                llvm_i32_ty]>;
   def int_evl_and : Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty]>;
   def int_evl_xor : Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty]>;
 
 // Comparison
@@ -1241,7 +1241,7 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
   def int_evl_cmp : Intrinsic<[ llvm_anyvector_ty ],
                               [ llvm_anyvector_ty,
                                 LLVMMatchType<1>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty,
                                 llvm_i8_ty]>;
 }
@@ -1250,7 +1250,7 @@ let IntrProperties = [IntrNoMem, Mask<2>, VectorLength<3>] in {
 
 def int_evl_fneg : Intrinsic<[ llvm_anyvector_ty ],
                              [ LLVMMatchType<0>,
-                               LLVMVectorSameWidth<0, llvm_i1_ty>,
+                               LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                llvm_i32_ty],
                              [ IntrNoMem, Mask<1>, VectorLength<2> ]>;
 
@@ -1258,7 +1258,7 @@ def int_evl_fma : Intrinsic<[ llvm_anyvector_ty ],
                             [ LLVMMatchType<0>,
                               LLVMMatchType<0>,
                               LLVMMatchType<0>,
-                              LLVMVectorSameWidth<0, llvm_i1_ty>,
+                              LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                               llvm_i32_ty],
                             [ IntrNoMem, Mask<3>, VectorLength<4> ]>;
 
@@ -1266,27 +1266,27 @@ def int_evl_fma : Intrinsic<[ llvm_anyvector_ty ],
 def int_evl_vshift: Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 llvm_i32_ty,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
                               [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
 
 def int_evl_expand: Intrinsic<[ llvm_anyvector_ty ],
                               [ LLVMMatchType<0>,
                                 LLVMMatchType<0>,
-                                LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                 llvm_i32_ty],
                               [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
 
 def int_evl_compress: Intrinsic<[ llvm_anyvector_ty ],
                                 [ LLVMMatchType<0>,
                                   LLVMMatchType<0>,
-                                  LLVMVectorSameWidth<0, llvm_i1_ty>,
+                                  LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                   llvm_i32_ty],
                                 [ IntrNoMem, Mask<2>, VectorLength<3> ]>;
 
 // Select
 def int_evl_select : Intrinsic<[ llvm_anyvector_ty ],
-                               [ LLVMVectorSameWidth<0, llvm_i1_ty>,
+                               [ LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
                                  LLVMMatchType<0>,
                                  LLVMMatchType<0>,
                                  llvm_i32_ty],
