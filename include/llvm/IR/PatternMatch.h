@@ -28,7 +28,6 @@
 #ifndef LLVM_IR_PATTERNMATCH_H
 #define LLVM_IR_PATTERNMATCH_H
 
-#include "llvm/IR/PredicatedInst.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/IR/Constant.h"
@@ -118,66 +117,6 @@ template<typename DestClass>
 struct MatcherCast<EmptyContext, DestClass> { using ActualCastType = DestClass; };
 
 
-
-// PredicatedMatchContext for pattern matching
-struct PredicatedContext {
-  Value * Mask;
-  Value * VectorLength;
-
-  void reset(Value * V) {
-    auto * PredI = dyn_cast<PredicatedInstruction>(V);
-    if (!PredI) {
-      VectorLength = nullptr;
-      Mask = nullptr;
-    } else {
-      VectorLength = PredI->getVectorLength();
-      Mask = PredI->getMask();
-    }
-  }
-
-  PredicatedContext(PredicatedInstruction & PI)
-  : Mask (PI.getMask())
-  , VectorLength (PI.getVectorLength())
-  {}
-
-  PredicatedContext(const PredicatedContext & PC)
-  : Mask (PC.Mask)
-  , VectorLength(PC.VectorLength)
-  {}
-
-  // accept a match where \p Val is in a non-leaf position in a match pattern
-  bool acceptInnerNode(const Value * Val) const {
-    return true;
-    auto PredI = dyn_cast<PredicatedInstruction>(Val);
-    if (!PredI) return VectorLength == nullptr && Mask == nullptr;
-    return VectorLength == PredI->getVectorLength() && Mask == PredI->getMask();
-  }
-
-  // accept a match where \p Val is bound to a free variable.
-  bool acceptBoundNode(const Value * Val) const { return true; }
-
-  // whether this context is compatiable with \p E.
-  bool acceptContext(PredicatedContext PC) const {
-    return true; //PC.Mask == Mask && PC.VectorLength == VectorLength;
-  }
-
-  // merge the context \p E into this context and return whether the resulting context is valid.
-  bool mergeContext(PredicatedContext PC) const { return acceptContext(PC); }
-
-  // match with consistent context
-  template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
-    PredicatedContext SubContext(*this);
-    return const_cast<Pattern &>(P).match_context(V, SubContext);
-  }
-};
-
-struct PredicatedContext;
-template<> struct MatcherCast<PredicatedContext, BinaryOperator> { using ActualCastType = PredicatedBinaryOperator; };
-template<> struct MatcherCast<PredicatedContext, Operator>       { using ActualCastType = PredicatedOperator; };
-template<> struct MatcherCast<PredicatedContext, ICmpInst>       { using ActualCastType = PredicatedICmpInst; };
-template<> struct MatcherCast<PredicatedContext, FCmpInst>       { using ActualCastType = PredicatedFCmpInst; };
-template<> struct MatcherCast<PredicatedContext, SelectInst>     { using ActualCastType = PredicatedSelectInst; };
-template<> struct MatcherCast<PredicatedContext, Instruction>    { using ActualCastType = PredicatedInstruction; };
 
 
 
