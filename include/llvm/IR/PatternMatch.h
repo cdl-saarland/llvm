@@ -47,18 +47,22 @@ namespace PatternMatch {
 
 namespace {
   struct EmptyContext {
+
     EmptyContext() {}
 
     EmptyContext(const EmptyContext & E) {}
 
+    // reset this match context to be rooted at \p V
+    void reset(Value * V) {}
+
     // accept a match where \p Val is in a non-leaf position in a match pattern
-    bool acceptInnerNode(Value * Val) { return true; }
+    bool acceptInnerNode(const Value * Val) const { return true; }
 
     // accept a match where \p Val is bound to a free variable.
-    bool acceptBoundNode(Value * Val) { return true; }
+    bool acceptBoundNode(const Value * Val) const { return true; }
 
     // whether this context is compatiable with \p E.
-    bool acceptContext(EmptyContext E) { return true; }
+    bool acceptContext(EmptyContext E) const { return true; }
 
     // merge the context \p E into this context and return whether the resulting context is valid.
     bool mergeContext(EmptyContext E) { return true; }
@@ -70,23 +74,23 @@ namespace {
     // whether the Value \p Obj behaves like a \p Class.
     template<typename Class>
     static auto match_dyn_cast(Value* Obj) { return dyn_cast<Class>(Obj); }
+    // whether the Value \p Obj behaves like a \p Class.
+    template<typename Class>
+    static auto match_dyn_cast(const Value* Obj) { return dyn_cast<Class>(Obj); }
 
-#if 0
-    // Return an Opcode for \p O that should be used when matching \p O.
-    // The returned Opcode has to be compatible with the result of ::match_isa.
-    static unsigned getFunctionalOpcode(Operator & O) const { return O.getOpcode(); }
-
-    // Return the Predicate that \p I has.
-    // Only valid if ::match_isa identifies \p I as a CmpInst.
-    static CmpInst::Predicate getPredicate(Instruction & I) const {
-      return cast<CmpInst>(I).getPredicate();
-    }
-#endif
+    // whether the Value \p Obj behaves like a \p Class.
+    template<typename Class>
+    static auto match_cast(Value* Obj) { return cast<Class>(Obj); }
+    // whether the Value \p Obj behaves like a \p Class.
+    template<typename Class>
+    static auto match_cast(const Value* Obj) { return cast<Class>(Obj); }
   };
 }
 
+
 // match pattern in a context
 template <typename Val, typename Pattern, typename MatchContext> bool match_context(Val *V, const Pattern &P, MatchContext & MContext) {
+  MContext.init(V);
   return const_cast<Pattern &>(P).match_context(V, MContext);
 }
 
@@ -534,6 +538,8 @@ template <typename Class> struct bind_ty {
   template <typename ITy> bool match(ITy *V) { EmptyContext EContext; return match_context(V, EContext); }
   template <typename ITy, typename MatchContext> bool match_context(ITy *V, MatchContext & MContext) {
     if (auto *CV = dyn_cast<Class>(V)) {
+      if (!MContext.acceptBoundNode(V)) return false;
+
       VR = CV;
       return true;
     }
@@ -671,7 +677,7 @@ struct AnyBinaryOp_match {
 
   template <typename OpTy> bool match(OpTy *V) { EmptyContext EContext; return match_context(V, EContext); }
   template <typename OpTy, typename MatchContext> bool match_context(OpTy *V, MatchContext & MContext) {
-    auto * I = MatchContext::template dyn_cast<BinaryOperator>(V);
+    auto * I = MatchContext::template match_dyn_cast<BinaryOperator>(V);
     if (!I) return false;
 
     if (!MContext.acceptInnerNode(I)) return false;
@@ -704,7 +710,7 @@ struct BinaryOp_match {
 
   template <typename OpTy> bool match(OpTy *V) { EmptyContext EContext; return match_context(V, EContext); }
   template <typename OpTy, typename MatchContext> bool match_context(OpTy *V, MatchContext & MContext) {
-    auto * I = MatchContext::template match_dyn_cast<Instruction>(V);
+    auto * I = MatchContext::template match_dyn_cast<const Instruction>(V);
     if (I && I->getOpcode() == Opcode) {
       MatchContext LRContext(MContext);
       if (!MContext.acceptInnerNode(I)) return false;
@@ -752,23 +758,18 @@ template <typename Op_t> struct FNeg_match {
   template <typename OpTy> bool match(OpTy *V) { EmptyContext EContext; return match_context(V, EContext); }
   template <typename OpTy, typename MatchContext> bool match_context(OpTy *V, MatchContext & MContext) {
     auto *FPMO = dyn_cast<FPMathOperator>(V);
-    if (!FPMO) return false;
-
-    if (MContext.getFunctionalOpcode(FPMO) == Instruction::FSub) {
-      if (FPMO->hasNoSignedZeros()) {
-        // With 'nsz', any zero goes.
-        if (!cstfp_pred_ty<is_any_zero_fp>().match_context(FPMO->getOperand(0), MContext))
-          return false;
-      } else {
-        // Without 'nsz', we need fsub -0.0, X exactly.
-        if (!cstfp_pred_ty<is_neg_zero_fp>().match_context(FPMO->getOperand(0), MContext))
-          return false;
-      }
-
-      return X.match_context(FPMO->getOperand(1). MContext);
+    if (!FPMO || MatchContext::template match_cast<const Operator>(V)->getOpcode() != Instruction::FSub)
+      return false;
+    if (FPMO->hasNoSignedZeros()) {
+      // With 'nsz', any zero goes.
+      if (!cstfp_pred_ty<is_any_zero_fp>().match_context(FPMO->getOperand(0), MContext))
+        return false;
+    } else {
+      // Without 'nsz', we need fsub -0.0, X exactly.
+      if (!cstfp_pred_ty<is_neg_zero_fp>().match_context(FPMO->getOperand(0), MContext))
+        return false;
     }
-
-    return false;
+    return X.match_context(FPMO->getOperand(1), MContext);
   }
 };
 
@@ -882,7 +883,7 @@ struct OverflowingBinaryOp_match {
   template <typename OpTy> bool match(OpTy *V) { EmptyContext EContext; return match_context(V, EContext); }
   template <typename OpTy, typename MatchContext> bool match_context(OpTy *V, MatchContext & MContext) {
     if (auto *Op = dyn_cast<OverflowingBinaryOperator>(V)) {
-      if (MContext.getFunctionalOpcode(Op->getOpcode()) != Opcode)
+      if (Op->getOpcode() != Opcode)
         return false;
       if (WrapFlags & OverflowingBinaryOperator::NoUnsignedWrap &&
           !Op->hasNoUnsignedWrap())
@@ -974,8 +975,8 @@ struct BinOpPred_match : Predicate {
 
   template <typename OpTy> bool match(OpTy *V) { EmptyContext EContext; return match_context(V, EContext); }
   template <typename OpTy, typename MatchContext> bool match_context(OpTy *V, MatchContext & MContext) {
-    if (auto *I = dyn_cast<Instruction>(V))
-      return this->isOpType(MContext.getFunctionalOpcode(I)) && L.match_context(I->getOperand(0), MContext) &&
+    if (auto *I = MatchContext::template match_dyn_cast<Instruction>(V))
+      return this->isOpType(I->getOpcode()) && L.match_context(I->getOperand(0), MContext) &&
              R.match_context(I->getOperand(1), MContext);
     if (auto *CE = dyn_cast<ConstantExpr>(V))
       return this->isOpType(CE->getOpcode()) && L.match(CE->getOperand(0)) &&
@@ -1087,7 +1088,7 @@ struct CmpClass_match {
   template <typename OpTy, typename MatchContext> bool match_context(OpTy *V, MatchContext & MContext) {
     if (auto *I = MatchContext::template match_dyn_cast<Class>(V)) {
       if (!MContext.acceptInnerNode(I)) return false;
-      MatchContext LRContext;
+      MatchContext LRContext(MContext);
       if ((L.match_context(I->getOperand(0), LRContext) && R.match_context(I->getOperand(1), LRContext) && MContext.mergeContext(LRContext)) ||
           (Commutable && (L.match_context(I->getOperand(1), MContext) && R.match_context(I->getOperand(0), MContext)))) {
         Predicate = I->getPredicate();
@@ -1390,8 +1391,6 @@ struct MaxMin_match {
     // Does "(x pred y) ? x : y" represent the desired max/min operation?
     if (!Pred_t::match(Pred))
       return false;
-
-    MatchContext LRMatch;
 
     // It does!  Bind the operands.
     MatchContext LRContext(MContext);
