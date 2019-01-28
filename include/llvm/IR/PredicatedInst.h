@@ -24,6 +24,7 @@
 #include "llvm/IR/Value.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/IR/IntrinsicInst.h"
+#include "llvm/IR/Operator.h"
 #include <cstddef>
 
 namespace llvm {
@@ -109,7 +110,11 @@ public:
   static bool classof(const Instruction * I) {
     if (isa<BinaryOperator>(I)) return true;
     auto EVLInst = dyn_cast<EVLIntrinsic>(I);
-    return EVLInst && EVLInst->isBinaryOp();
+    bool ok = EVLInst && EVLInst->isBinaryOp();
+    if (getenv("SDEBUG")) {
+      errs() << "Matched PredBinOp? " << ok << " for " << *EVLInst << "\n";
+    }
+    return ok;
   }
   static bool classof(const ConstantExpr * CE) { return isa<BinaryOperator>(CE); }
   static bool classof(const Value *V) {
@@ -218,106 +223,6 @@ public:
 };
 
 
-// PredicatedMatchContext for pattern matching
-struct PredicatedContext {
-  Value * Mask;
-  Value * VectorLength;
-
-  void reset(Value * V) {
-    auto * PredI = dyn_cast<PredicatedInstruction>(V);
-    if (!PredI) {
-      VectorLength = nullptr;
-      Mask = nullptr;
-    } else {
-      VectorLength = PredI->getVectorLength();
-      Mask = PredI->getMask();
-    }
-  }
-
-  PredicatedContext(PredicatedInstruction & PI)
-  : Mask (PI.getMask())
-  , VectorLength (PI.getVectorLength())
-  {}
-
-  PredicatedContext(const PredicatedContext & PC)
-  : Mask (PC.Mask)
-  , VectorLength(PC.VectorLength)
-  {}
-
-  // accept a match where \p Val is in a non-leaf position in a match pattern
-  bool acceptInnerNode(const Value * Val) const {
-    auto PredI = dyn_cast<PredicatedInstruction>(Val);
-    if (!PredI) return VectorLength == nullptr && Mask == nullptr;
-    return VectorLength == PredI->getVectorLength() && Mask == PredI->getMask();
-  }
-
-  // accept a match where \p Val is bound to a free variable.
-  bool acceptBoundNode(const Value * Val) const { return true; }
-
-  // whether this context is compatiable with \p E.
-  bool acceptContext(PredicatedContext PC) const {
-    return PC.Mask == Mask && PC.VectorLength == VectorLength;
-  }
-
-  // merge the context \p E into this context and return whether the resulting context is valid.
-  bool mergeContext(PredicatedContext PC) const { return acceptContext(PC); }
-
-  // match with consistent context
-  template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
-    PredicatedContext SubContext(*this);
-    return const_cast<Pattern &>(P).match_context(V, SubContext);
-  }
-
-  // whether the Value \p Obj behaves like a \p Class.
-  template<typename Class>
-  static bool match_isa(Value* Obj) { return isa<Class>(Obj); }
-
-  // whether the Value \p Obj behaves like a \p Class.
-  template<typename Class>
-  static auto match_dyn_cast(Value* Obj) { return dyn_cast<Class>(Obj); }
-
-  // whether the Value \p Obj behaves like a \p Class.
-  template<typename Class>
-  static auto match_dyn_cast(const Value* Obj) { return dyn_cast<Class>(Obj); }
-
-  // whether the Value \p Obj behaves like a \p Class.
-  template<typename Class>
-  static auto match_cast(Value* Obj) { return cast<Class>(Obj); }
-
-  // whether the Value \p Obj behaves like a \p Class.
-  template<typename Class>
-  static auto match_cast(const Value* Obj) { return cast<Class>(Obj); }
-};
-
-template<> bool PredicatedContext::match_isa<BinaryOperator>(Value* Obj) { return isa<PredicatedBinaryOperator>(Obj); }
-template<> bool PredicatedContext::match_isa<Instruction>(Value* Obj)    { return isa<PredicatedInstruction>(Obj); }
-template<> bool PredicatedContext::match_isa<ICmpInst>(Value* Obj)       { return isa<PredicatedICmpInst>(Obj); }
-template<> bool PredicatedContext::match_isa<FCmpInst>(Value* Obj)       { return isa<PredicatedFCmpInst>(Obj); }
-template<> bool PredicatedContext::match_isa<SelectInst>(Value* Obj)     { return isa<PredicatedSelectInst>(Obj); }
-
-template<> auto PredicatedContext::match_dyn_cast<BinaryOperator>(Value* Obj) { return dyn_cast<PredicatedBinaryOperator>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<Instruction>(Value* Obj)    { return dyn_cast<PredicatedInstruction>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<ICmpInst>(Value* Obj)       { return dyn_cast<PredicatedICmpInst>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<FCmpInst>(Value* Obj)       { return dyn_cast<PredicatedFCmpInst>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<SelectInst>(Value* Obj)     { return dyn_cast<PredicatedSelectInst>(Obj); }
-
-template<> auto PredicatedContext::match_dyn_cast<const BinaryOperator>(const Value* Obj) { return dyn_cast<const PredicatedBinaryOperator>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<const Instruction>(const Value* Obj)    { return dyn_cast<const PredicatedInstruction>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<const ICmpInst>(const Value* Obj)       { return dyn_cast<const PredicatedICmpInst>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<const FCmpInst>(const Value* Obj)       { return dyn_cast<const PredicatedFCmpInst>(Obj); }
-template<> auto PredicatedContext::match_dyn_cast<const SelectInst>(const Value* Obj)     { return dyn_cast<const PredicatedSelectInst>(Obj); }
-
-template<> auto PredicatedContext::match_cast<const BinaryOperator>(const Value* Obj) { return cast<const PredicatedBinaryOperator>(Obj); }
-template<> auto PredicatedContext::match_cast<const Instruction>(const Value* Obj)    { return cast<const PredicatedInstruction>(Obj); }
-template<> auto PredicatedContext::match_cast<const ICmpInst>(const Value* Obj)       { return cast<const PredicatedICmpInst>(Obj); }
-template<> auto PredicatedContext::match_cast<const FCmpInst>(const Value* Obj)       { return cast<const PredicatedFCmpInst>(Obj); }
-template<> auto PredicatedContext::match_cast<const SelectInst>(const Value* Obj)     { return cast<const PredicatedSelectInst>(Obj); }
-
-template<> auto PredicatedContext::match_cast<BinaryOperator>(Value* Obj) { return cast<PredicatedBinaryOperator>(Obj); }
-template<> auto PredicatedContext::match_cast<Instruction>(Value* Obj)    { return cast<PredicatedInstruction>(Obj); }
-template<> auto PredicatedContext::match_cast<ICmpInst>(Value* Obj)       { return cast<PredicatedICmpInst>(Obj); }
-template<> auto PredicatedContext::match_cast<FCmpInst>(Value* Obj)       { return cast<PredicatedFCmpInst>(Obj); }
-template<> auto PredicatedContext::match_cast<SelectInst>(Value* Obj)     { return cast<PredicatedSelectInst>(Obj); }
 
 } // namespace llvm
 
