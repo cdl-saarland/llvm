@@ -214,8 +214,8 @@ namespace llvm {
 
     CmpInst::Predicate getCmpPredicate() const;
 
-    Value* GetMask() const;
-    Value* GetVectorLength() const;
+    Value* getMask() const;
+    Value* getVectorLength() const;
 
     // Methods for support type inquiry through isa, cast, and dyn_cast:
     static bool classof(const IntrinsicInst *I) {
@@ -283,9 +283,10 @@ namespace llvm {
       return isa<IntrinsicInst>(V) && classof(cast<IntrinsicInst>(V));
     }
 
+    // Equivalent non-predicated opcode
     unsigned getFunctionalOpcode() const {
       switch (getIntrinsicID()) {
-        default: return getOpcode();
+        default: return Instruction::Call;
 
       case Intrinsic::evl_cmp:
         if (getArgOperand(0)->getType()->isFloatingPointTy()) {
@@ -302,15 +303,9 @@ namespace llvm {
       case Intrinsic::evl_shl:  return Instruction::Shl;
 
       case Intrinsic::evl_select: return Instruction::Select;
-      // case Intrinsic::evl_compose:
-      // case Intrinsic::evl_compress:
-      // case Intrinsic::evl_expand:
-      // case Intrinsic::evl_vshift:
 
       case Intrinsic::evl_load:   return Instruction::Load;
       case Intrinsic::evl_store:  return Instruction::Store;
-      // case Intrinsic::evl_gather:
-      // case Intrinsic::evl_scatter:
 
       case Intrinsic::evl_fneg:   return Instruction::FNeg;
 
@@ -320,8 +315,6 @@ namespace llvm {
       case Intrinsic::evl_fdiv:   return Instruction::FDiv;
       case Intrinsic::evl_frem:   return Instruction::FRem;
 
-      // case Intrinsic::evl_fma:
-
       case Intrinsic::evl_add:    return Instruction::Add;
       case Intrinsic::evl_sub:    return Instruction::Sub;
       case Intrinsic::evl_mul:    return Instruction::Mul;
@@ -329,23 +322,6 @@ namespace llvm {
       case Intrinsic::evl_sdiv:   return Instruction::SDiv;
       case Intrinsic::evl_urem:   return Instruction::URem;
       case Intrinsic::evl_srem:   return Instruction::SRem;
-
-      // case Intrinsic::evl_reduce_add:
-      // case Intrinsic::evl_reduce_mul:
-      // case Intrinsic::evl_reduce_umin:
-      // case Intrinsic::evl_reduce_umax:
-      // case Intrinsic::evl_reduce_smin:
-      // case Intrinsic::evl_reduce_smax:
-
-      // case Intrinsic::evl_reduce_and:
-      // case Intrinsic::evl_reduce_or:
-      // case Intrinsic::evl_reduce_xor:
-
-      // case Intrinsic::evl_reduce_fadd:
-      // case Intrinsic::evl_reduce_fmul:
-      // case Intrinsic::evl_reduce_fmin:
-      // case Intrinsic::evl_reduce_fmax:
-      //   return true;
       }
     }
   };

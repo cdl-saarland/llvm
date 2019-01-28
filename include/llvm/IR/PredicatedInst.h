@@ -49,9 +49,16 @@ public:
     return thisEVL->getVectorLength();
   }
 
+  unsigned getOpcode() const {
+    auto * EVLInst = dyn_cast<EVLIntrinsic>(this);
+    if (EVLInst)
+      return EVLInst->getFunctionalOpcode();
+    return cast<Instruction>(this)->getOpcode();
+  }
+
   static bool classof(const Instruction * I) { return isa<Instruction>(I); }
   static bool classof(const ConstantExpr * CE) { return false; }
-  static bool classof(const Value *V) { return isa<ConstantExpr>(V) || isa<Instruction>(V): }
+  static bool classof(const Value *V) { return isa<Instruction>(V); }
 };
 
 class PredicatedOperator : public User {
@@ -65,7 +72,7 @@ public:
 
   /// Return the opcode for this Instruction or ConstantExpr.
   unsigned getOpcode() const {
-    auto * EVLInst = dyn_cast<EVLIntrinsic>(I);
+    auto * EVLInst = dyn_cast<EVLIntrinsic>(this);
     if (EVLInst)
       return EVLInst->getFunctionalOpcode();
     if (const Instruction *I = dyn_cast<Instruction>(this))
@@ -87,7 +94,7 @@ public:
 
   static bool classof(const Instruction * I) { return isa<EVLIntrinsic>(I) || isa<Operator>(I); }
   static bool classof(const ConstantExpr * CE) { return isa<Operator>(CE); }
-  static bool classof(const Value *V) { return isa<EVLIntrinsic>(V) || isa<Operator>(V): }
+  static bool classof(const Value *V) { return isa<EVLIntrinsic>(V) || isa<Operator>(V); }
 };
 
 class PredicatedBinaryOperator : public PredicatedOperator {
@@ -101,14 +108,15 @@ public:
 
   static bool classof(const Instruction * I) {
     if (isa<BinaryOperator>(I)) return true;
-    auto EVLInst = dyn_cast<EVLInstrinsic>(I);
+    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
     return EVLInst && EVLInst->isBinaryOp();
   }
   static bool classof(const ConstantExpr * CE) { return isa<BinaryOperator>(CE); }
   static bool classof(const Value *V) {
     auto * I = dyn_cast<Instruction>(V);
     if (I && classof(I)) return true;
-    return isa<ConstantExpr>(V);
+    auto * CE = dyn_cast<ConstantExpr>(V);
+    return CE && classof(CE);
   }
 };
 
@@ -123,16 +131,25 @@ public:
 
   static bool classof(const Instruction * I) {
     if (isa<ICmpInst>(I)) return true;
-    auto EVLInst = dyn_cast<EVLInstrinsic>(I);
-    return EVLInst && EVLInst->gisBinaryOp();
+    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
+    return EVLInst && EVLInst->getFunctionalOpcode() == Instruction::ICmp;
   }
-  static bool classof(const ConstantExpr * CE) { return isa<BinaryOperator>(CE); }
+  static bool classof(const ConstantExpr * CE) { return CE->getOpcode() == Instruction::ICmp; }
   static bool classof(const Value *V) {
     auto * I = dyn_cast<Instruction>(V);
     if (I && classof(I)) return true;
-    return isa<ConstantExpr>(V);
+    auto * CE = dyn_cast<ConstantExpr>(V);
+    return CE && classof(CE);
   }
-}
+
+  ICmpInst::Predicate getPredicate() const {
+    auto * ICInst = dyn_cast<const ICmpInst>(this);
+    if (ICInst) return ICInst->getPredicate();
+    auto * CE = dyn_cast<const ConstantExpr>(this);
+    if (CE) return static_cast<ICmpInst::Predicate>(CE->getPredicate());
+    return static_cast<ICmpInst::Predicate>(cast<EVLIntrinsic>(this)->getCmpPredicate());
+  }
+};
 
 
 class PredicatedFCmpInst : public PredicatedBinaryOperator {
@@ -143,24 +160,84 @@ public:
   ~PredicatedFCmpInst() = delete;
 
   void *operator new(size_t s) = delete;
-}
 
+  static bool classof(const Instruction * I) {
+    if (isa<FCmpInst>(I)) return true;
+    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
+    return EVLInst && EVLInst->getFunctionalOpcode() == Instruction::FCmp;
+  }
+  static bool classof(const ConstantExpr * CE) { return CE->getOpcode() == Instruction::FCmp; }
+  static bool classof(const Value *V) {
+    auto * I = dyn_cast<Instruction>(V);
+    if (I && classof(I)) return true;
+    return isa<ConstantExpr>(V);
+  }
+
+  FCmpInst::Predicate getPredicate() const {
+    auto * FCInst = dyn_cast<const FCmpInst>(this);
+    if (FCInst) return FCInst->getPredicate();
+    auto * CE = dyn_cast<const ConstantExpr>(this);
+    if (CE) return static_cast<FCmpInst::Predicate>(CE->getPredicate());
+    return static_cast<FCmpInst::Predicate>(cast<EVLIntrinsic>(this)->getCmpPredicate());
+  }
+};
+
+
+class PredicatedSelectInst : public PredicatedOperator {
+public:
+  // The Operator class is intended to be used as a utility, and is never itself
+  // instantiated.
+  PredicatedSelectInst() = delete;
+  ~PredicatedSelectInst() = delete;
+
+  void *operator new(size_t s) = delete;
+
+  static bool classof(const Instruction * I) {
+    if (isa<SelectInst>(I)) return true;
+    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
+    return EVLInst && EVLInst->getFunctionalOpcode() == Instruction::Select;
+  }
+  static bool classof(const ConstantExpr * CE) { return CE->getOpcode() == Instruction::Select; }
+  static bool classof(const Value *V) {
+    auto * I = dyn_cast<Instruction>(V);
+    if (I && classof(I)) return true;
+    auto * CE = dyn_cast<ConstantExpr>(V);
+    return CE && CE->getOpcode() == Instruction::Select;
+  }
+
+  const Value *getCondition() const { return getOperand(0); }
+  const Value *getTrueValue() const { return getOperand(1); }
+  const Value *getFalseValue() const { return getOperand(2); }
+  Value *getCondition() { return getOperand(0); }
+  Value *getTrueValue() { return getOperand(1); }
+  Value *getFalseValue() { return getOperand(2); }
+
+  void setCondition(Value *V) { setOperand(0, V); }
+  void setTrueValue(Value *V) { setOperand(1, V); }
+  void setFalseValue(Value *V) { setOperand(2, V); }
+};
 
 
 // PredicatedMatchContext for pattern matching
 struct PredicatedContext {
-  Value * VectorLength;
   Value * Mask;
+  Value * VectorLength;
 
   void reset(Value * V) {
     auto * PredI = dyn_cast<PredicatedInstruction>(V);
     if (!PredI) {
       VectorLength = nullptr;
       Mask = nullptr;
+    } else {
+      VectorLength = PredI->getVectorLength();
+      Mask = PredI->getMask();
     }
-    VectorLength = PredI->getVectorLength();
-    Mask = PredI->getMask();
   }
+
+  PredicatedContext(PredicatedInstruction & PI)
+  : Mask (PI.getMask())
+  , VectorLength (PI.getVectorLength())
+  {}
 
   PredicatedContext(const PredicatedContext & PC)
   : Mask (PC.Mask)
@@ -169,7 +246,7 @@ struct PredicatedContext {
 
   // accept a match where \p Val is in a non-leaf position in a match pattern
   bool acceptInnerNode(const Value * Val) const {
-    auto PredI = dyn_cast<PredicatedInstruction>(val);
+    auto PredI = dyn_cast<PredicatedInstruction>(Val);
     if (!PredI) return VectorLength == nullptr && Mask == nullptr;
     return VectorLength == PredI->getVectorLength() && Mask == PredI->getMask();
   }
@@ -185,51 +262,62 @@ struct PredicatedContext {
   // merge the context \p E into this context and return whether the resulting context is valid.
   bool mergeContext(PredicatedContext PC) const { return acceptContext(PC); }
 
+  // match with consistent context
+  template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
+    PredicatedContext SubContext(*this);
+    return const_cast<Pattern &>(P).match_context(V, SubContext);
+  }
+
   // whether the Value \p Obj behaves like a \p Class.
   template<typename Class>
   static bool match_isa(Value* Obj) { return isa<Class>(Obj); }
-  template<> static bool match_isa<BinaryOperator>(Value* Obj) { return isa<PredicatedBinaryOperator>(Obj); }
-  template<> static bool match_isa<Instruction>(Value* Obj)    { return isa<PredicatedInstruction>(Obj); }
-  template<> static bool match_isa<ICmpInst>(Value* Obj)       { return isa<PredicatedICmpInst>(Obj); }
-  template<> static bool match_isa<FCmpInst>(Value* Obj)       { return isa<PredicatedFCmpInst>(Obj); }
-  template<> static bool match_isa<SelectInst>(Value* Obj)     { return isa<PredicatedSelectInst>(Obj); }
 
   // whether the Value \p Obj behaves like a \p Class.
   template<typename Class>
   static auto match_dyn_cast(Value* Obj) { return dyn_cast<Class>(Obj); }
-  template<> static auto match_dyn_cast<BinaryOperator>(Value* Obj) { return dyn_cast<PredicatedBinaryOperator>(Obj); }
-  template<> static auto match_dyn_cast<Instruction>(Value* Obj)    { return dyn_cast<PredicatedInstruction>(Obj); }
-  template<> static auto match_dyn_cast<ICmpInst>(Value* Obj)       { return dyn_cast<PredicatedICmpInst>(Obj); }
-  template<> static auto match_dyn_cast<FCmpInst>(Value* Obj)       { return dyn_cast<PredicatedFCmpInst>(Obj); }
-  template<> static auto match_dyn_cast<SelectInst>(Value* Obj)     { return dyn_cast<PredicatedSelectInst>(Obj); }
 
   // whether the Value \p Obj behaves like a \p Class.
   template<typename Class>
   static auto match_dyn_cast(const Value* Obj) { return dyn_cast<Class>(Obj); }
-  template<> static auto match_dyn_cast<const BinaryOperator>(const Value* Obj) { return dyn_cast<const PredicatedBinaryOperator>(Obj); }
-  template<> static auto match_dyn_cast<const Instruction>(const Value* Obj)    { return dyn_cast<const PredicatedInstruction>(Obj); }
-  template<> static auto match_dyn_cast<const ICmpInst>(const Value* Obj)       { return dyn_cast<const PredicatedICmpInst>(Obj); }
-  template<> static auto match_dyn_cast<const FCmpInst>(const Value* Obj)       { return dyn_cast<const PredicatedFCmpInst>(Obj); }
-  template<> static auto match_dyn_cast<const SelectInst>(const Value* Obj)     { return dyn_cast<const PredicatedSelectInst>(Obj); }
 
   // whether the Value \p Obj behaves like a \p Class.
   template<typename Class>
   static auto match_cast(Value* Obj) { return cast<Class>(Obj); }
-  template<> static auto match_cast<BinaryOperator>(Value* Obj) { return cast<PredicatedBinaryOperator>(Obj); }
-  template<> static auto match_cast<Instruction>(Value* Obj)    { return cast<PredicatedInstruction>(Obj); }
-  template<> static auto match_cast<ICmpInst>(Value* Obj)       { return cast<PredicatedICmpInst>(Obj); }
-  template<> static auto match_cast<FCmpInst>(Value* Obj)       { return cast<PredicatedFCmpInst>(Obj); }
-  template<> static auto match_cast<SelectInst>(Value* Obj)     { return cast<PredicatedSelectInst>(Obj); }
 
   // whether the Value \p Obj behaves like a \p Class.
   template<typename Class>
   static auto match_cast(const Value* Obj) { return cast<Class>(Obj); }
-  template<> static auto match_cast<const BinaryOperator>(const Value* Obj) { return cast<const PredicatedBinaryOperator>(Obj); }
-  template<> static auto match_cast<const Instruction>(const Value* Obj)    { return cast<const PredicatedInstruction>(Obj); }
-  template<> static auto match_cast<const ICmpInst>(const Value* Obj)       { return cast<const PredicatedICmpInst>(Obj); }
-  template<> static auto match_cast<const FCmpInst>(const Value* Obj)       { return cast<const PredicatedFCmpInst>(Obj); }
-  template<> static auto match_cast<const SelectInst>(const Value* Obj)     { return cast<const PredicatedSelectInst>(Obj); }
 };
+
+template<> bool PredicatedContext::match_isa<BinaryOperator>(Value* Obj) { return isa<PredicatedBinaryOperator>(Obj); }
+template<> bool PredicatedContext::match_isa<Instruction>(Value* Obj)    { return isa<PredicatedInstruction>(Obj); }
+template<> bool PredicatedContext::match_isa<ICmpInst>(Value* Obj)       { return isa<PredicatedICmpInst>(Obj); }
+template<> bool PredicatedContext::match_isa<FCmpInst>(Value* Obj)       { return isa<PredicatedFCmpInst>(Obj); }
+template<> bool PredicatedContext::match_isa<SelectInst>(Value* Obj)     { return isa<PredicatedSelectInst>(Obj); }
+
+template<> auto PredicatedContext::match_dyn_cast<BinaryOperator>(Value* Obj) { return dyn_cast<PredicatedBinaryOperator>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<Instruction>(Value* Obj)    { return dyn_cast<PredicatedInstruction>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<ICmpInst>(Value* Obj)       { return dyn_cast<PredicatedICmpInst>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<FCmpInst>(Value* Obj)       { return dyn_cast<PredicatedFCmpInst>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<SelectInst>(Value* Obj)     { return dyn_cast<PredicatedSelectInst>(Obj); }
+
+template<> auto PredicatedContext::match_dyn_cast<const BinaryOperator>(const Value* Obj) { return dyn_cast<const PredicatedBinaryOperator>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<const Instruction>(const Value* Obj)    { return dyn_cast<const PredicatedInstruction>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<const ICmpInst>(const Value* Obj)       { return dyn_cast<const PredicatedICmpInst>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<const FCmpInst>(const Value* Obj)       { return dyn_cast<const PredicatedFCmpInst>(Obj); }
+template<> auto PredicatedContext::match_dyn_cast<const SelectInst>(const Value* Obj)     { return dyn_cast<const PredicatedSelectInst>(Obj); }
+
+template<> auto PredicatedContext::match_cast<const BinaryOperator>(const Value* Obj) { return cast<const PredicatedBinaryOperator>(Obj); }
+template<> auto PredicatedContext::match_cast<const Instruction>(const Value* Obj)    { return cast<const PredicatedInstruction>(Obj); }
+template<> auto PredicatedContext::match_cast<const ICmpInst>(const Value* Obj)       { return cast<const PredicatedICmpInst>(Obj); }
+template<> auto PredicatedContext::match_cast<const FCmpInst>(const Value* Obj)       { return cast<const PredicatedFCmpInst>(Obj); }
+template<> auto PredicatedContext::match_cast<const SelectInst>(const Value* Obj)     { return cast<const PredicatedSelectInst>(Obj); }
+
+template<> auto PredicatedContext::match_cast<BinaryOperator>(Value* Obj) { return cast<PredicatedBinaryOperator>(Obj); }
+template<> auto PredicatedContext::match_cast<Instruction>(Value* Obj)    { return cast<PredicatedInstruction>(Obj); }
+template<> auto PredicatedContext::match_cast<ICmpInst>(Value* Obj)       { return cast<PredicatedICmpInst>(Obj); }
+template<> auto PredicatedContext::match_cast<FCmpInst>(Value* Obj)       { return cast<PredicatedFCmpInst>(Obj); }
+template<> auto PredicatedContext::match_cast<SelectInst>(Value* Obj)     { return cast<PredicatedSelectInst>(Obj); }
 
 } // namespace llvm
 

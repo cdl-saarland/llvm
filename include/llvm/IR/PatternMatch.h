@@ -84,20 +84,24 @@ namespace {
     // whether the Value \p Obj behaves like a \p Class.
     template<typename Class>
     static auto match_cast(const Value* Obj) { return cast<Class>(Obj); }
+
+    // match with consistent context
+    template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
+      EmptyContext EContext;
+      return const_cast<Pattern &>(P).match_context(V, EContext);
+    }
   };
 }
 
-
-// match pattern in a context
-template <typename Val, typename Pattern, typename MatchContext> bool match_context(Val *V, const Pattern &P, MatchContext & MContext) {
-  MContext.init(V);
-  return const_cast<Pattern &>(P).match_context(V, MContext);
-}
-
-// match without context
+// match without (== empty) context
 template <typename Val, typename Pattern> bool match(Val *V, const Pattern &P) {
   EmptyContext ECtx;
   return const_cast<Pattern &>(P).match_context(V, ECtx);
+}
+
+// match pattern in a given context
+template <typename Val, typename Pattern, typename MatchContext> bool match(Val *V, const Pattern &P, MatchContext & MContext) {
+  return const_cast<Pattern &>(P).match_context(V, MContext);
 }
 
 template <typename SubPattern_t> struct OneUse_match {

@@ -52,6 +52,7 @@ class Type;
 class Value;
 class MDNode;
 class BinaryOperator;
+class EVLIntrinsic;
 
 /// InstrInfoQuery provides an interface to query additional information for
 /// instructions like metadata or keywords like nsw, which provides conservative
@@ -257,6 +258,10 @@ Value *SimplifyCall(CallBase *Call, const SimplifyQuery &Q);
 /// null.
 Value *SimplifyCall(CallBase *Call, Value *V, User::op_iterator ArgBegin,
                     User::op_iterator ArgEnd, const SimplifyQuery &Q);
+
+/// Given a function and iterators over arguments, fold the result or return
+/// null.
+Value *SimplifyEVLIntrinsic(EVLIntrinsic & EVLInst, const SimplifyQuery &Q);
 
 /// Given a function and set of arguments, fold the result or return null.
 Value *SimplifyCall(CallBase *Call, Value *V, ArrayRef<Value *> Args,

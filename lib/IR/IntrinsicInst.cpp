@@ -153,7 +153,7 @@ bool EVLIntrinsic::isUnaryOp() const {
 }
 
 Value*
-EVLIntrinsic::GetMask() const {
+EVLIntrinsic::getMask() const {
   if (isBinaryOp()) { return getArgOperand(2); }
   else if (isTernaryOp()) { return getArgOperand(3); }
   else if (isUnaryOp()) { return getArgOperand(1); }
@@ -161,7 +161,7 @@ EVLIntrinsic::GetMask() const {
 }
 
 Value*
-EVLIntrinsic::GetVectorLength() const {
+EVLIntrinsic::getVectorLength() const {
   if (isBinaryOp()) { return getArgOperand(3); }
   else if (isTernaryOp()) { return getArgOperand(4); }
   else if (isUnaryOp()) { return getArgOperand(2); }
