@@ -220,6 +220,8 @@ namespace llvm {
     // Methods for support type inquiry through isa, cast, and dyn_cast:
     static bool classof(const IntrinsicInst *I) {
       switch (I->getIntrinsicID()) {
+      default:
+        return false;
 
       case Intrinsic::evl_cmp:
 
@@ -275,12 +277,76 @@ namespace llvm {
       case Intrinsic::evl_reduce_fmin:
       case Intrinsic::evl_reduce_fmax:
         return true;
-
-      default: return false;
       }
     }
     static bool classof(const Value *V) {
       return isa<IntrinsicInst>(V) && classof(cast<IntrinsicInst>(V));
+    }
+
+    unsigned getFunctionalOpcode() const {
+      switch (getIntrinsicID()) {
+        default: return getOpcode();
+
+      case Intrinsic::evl_cmp:
+        if (getArgOperand(0)->getType()->isFloatingPointTy()) {
+          return Instruction::FCmp;
+        } else {
+          return Instruction::ICmp;
+        }
+
+      case Intrinsic::evl_and:  return Instruction::And;
+      case Intrinsic::evl_or:   return Instruction::Or;
+      case Intrinsic::evl_xor:  return Instruction::Xor;
+      case Intrinsic::evl_ashr: return Instruction::AShr;
+      case Intrinsic::evl_lshr: return Instruction::LShr;
+      case Intrinsic::evl_shl:  return Instruction::Shl;
+
+      case Intrinsic::evl_select: return Instruction::Select;
+      // case Intrinsic::evl_compose:
+      // case Intrinsic::evl_compress:
+      // case Intrinsic::evl_expand:
+      // case Intrinsic::evl_vshift:
+
+      case Intrinsic::evl_load:   return Instruction::Load;
+      case Intrinsic::evl_store:  return Instruction::Store;
+      // case Intrinsic::evl_gather:
+      // case Intrinsic::evl_scatter:
+
+      case Intrinsic::evl_fneg:   return Instruction::FNeg;
+
+      case Intrinsic::evl_fadd:   return Instruction::FAdd;
+      case Intrinsic::evl_fsub:   return Instruction::FSub;
+      case Intrinsic::evl_fmul:   return Instruction::FMul;
+      case Intrinsic::evl_fdiv:   return Instruction::FDiv;
+      case Intrinsic::evl_frem:   return Instruction::FRem;
+
+      // case Intrinsic::evl_fma:
+
+      case Intrinsic::evl_add:    return Instruction::Add;
+      case Intrinsic::evl_sub:    return Instruction::Sub;
+      case Intrinsic::evl_mul:    return Instruction::Mul;
+      case Intrinsic::evl_udiv:   return Instruction::UDiv;
+      case Intrinsic::evl_sdiv:   return Instruction::SDiv;
+      case Intrinsic::evl_urem:   return Instruction::URem;
+      case Intrinsic::evl_srem:   return Instruction::SRem;
+
+      // case Intrinsic::evl_reduce_add:
+      // case Intrinsic::evl_reduce_mul:
+      // case Intrinsic::evl_reduce_umin:
+      // case Intrinsic::evl_reduce_umax:
+      // case Intrinsic::evl_reduce_smin:
+      // case Intrinsic::evl_reduce_smax:
+
+      // case Intrinsic::evl_reduce_and:
+      // case Intrinsic::evl_reduce_or:
+      // case Intrinsic::evl_reduce_xor:
+
+      // case Intrinsic::evl_reduce_fadd:
+      // case Intrinsic::evl_reduce_fmul:
+      // case Intrinsic::evl_reduce_fmin:
+      // case Intrinsic::evl_reduce_fmax:
+      //   return true;
+      }
     }
   };
 
