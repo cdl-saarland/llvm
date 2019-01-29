@@ -341,10 +341,16 @@ struct PredicatedContext {
   // merge the context \p E into this context and return whether the resulting context is valid.
   bool mergeContext(PredicatedContext PC) const { return acceptContext(PC); }
 
-  // match with consistent context
-  template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
+  // match \p P in a new contest for \p Val.
+  template <typename Val, typename Pattern> bool reset_match(Val *V, const Pattern &P) {
     reset(V);
     return const_cast<Pattern &>(P).match_context(V, *this);
+  }
+
+  // match \p P in the current context.
+  template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
+    PredicatedContext SubContext(*this);
+    return const_cast<Pattern &>(P).match_context(V, SubContext);
   }
 };
 

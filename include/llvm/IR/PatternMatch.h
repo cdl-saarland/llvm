@@ -70,9 +70,14 @@ struct EmptyContext {
   // merge the context \p E into this context and return whether the resulting context is valid.
   bool mergeContext(EmptyContext E) { return true; }
 
-  // match with consistent context
-  template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
+  // reset this context to \p Val.
+  template <typename Val, typename Pattern> bool reset_match(Val *V, const Pattern &P) {
     reset(V);
+    return const_cast<Pattern &>(P).match_context(V, *this);
+  }
+
+  // match in the current context
+  template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
     return const_cast<Pattern &>(P).match_context(V, *this);
   }
 };

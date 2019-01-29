@@ -1851,7 +1851,7 @@ Instruction *InstCombiner::visitFSubGeneric(BinaryOpTy &I) {
   // Subtraction from -0.0 is the canonical form of fneg.
   // fsub nsz 0, X ==> fsub nsz -0.0, X
   Value *Op0 = I.getOperand(0), *Op1 = I.getOperand(1);
-  if (I.hasNoSignedZeros() && MC.try_match(Op0, m_PosZeroFP()))
+  if (I.hasNoSignedZeros() && MC.reset_match(Op0, m_PosZeroFP()))
     return MCBuilder.CreateFNegFMF(Op1, &I);
 
   Value *X, *Y;
@@ -1860,14 +1860,14 @@ Instruction *InstCombiner::visitFSubGeneric(BinaryOpTy &I) {
   // Fold negation into constant operand. This is limited with one-use because
   // fneg is assumed better for analysis and cheaper in codegen than fmul/fdiv.
   // -(X * C) --> X * (-C)
-  if (match(&I, m_FNeg(m_OneUse(m_FMul(m_Value(X), m_Constant(C))))))
-    return BinaryOperator::CreateFMulFMF(X, ConstantExpr::getFNeg(C), &I);
+  if (MC.reset_match(&I, m_FNeg(m_OneUse(m_FMul(m_Value(X), m_Constant(C))))))
+    return MCBuilder.CreateFMulFMF(X, ConstantExpr::getFNeg(C), &I);
   // -(X / C) --> X / (-C)
-  if (match(&I, m_FNeg(m_OneUse(m_FDiv(m_Value(X), m_Constant(C))))))
-    return BinaryOperator::CreateFDivFMF(X, ConstantExpr::getFNeg(C), &I);
+  if (MC.reset_match(&I, m_FNeg(m_OneUse(m_FDiv(m_Value(X), m_Constant(C))))))
+    return MCBuilder.CreateFDivFMF(X, ConstantExpr::getFNeg(C), &I);
   // -(C / X) --> (-C) / X
-  if (match(&I, m_FNeg(m_OneUse(m_FDiv(m_Constant(C), m_Value(X))))))
-    return BinaryOperator::CreateFDivFMF(ConstantExpr::getFNeg(C), X, &I);
+  if (MC.reset_match(&I, m_FNeg(m_OneUse(m_FDiv(m_Constant(C), m_Value(X))))))
+    return MCBuilder.CreateFDivFMF(ConstantExpr::getFNeg(C), X, &I);
 
   // If Op0 is not -0.0 or we can ignore -0.0: Z - (X - Y) --> Z + (Y - X)
   // Canonicalize to fadd to make analysis easier.
@@ -1876,7 +1876,7 @@ Instruction *InstCombiner::visitFSubGeneric(BinaryOpTy &I) {
   // killed later. We still limit that particular transform with 'hasOneUse'
   // because an fneg is assumed better/cheaper than a generic fsub.
   if (I.hasNoSignedZeros() || CannotBeNegativeZero(Op0, SQ.TLI)) {
-    if (MC.try_match(Op1, m_OneUse(m_FSub(m_Value(X), m_Value(Y))))) {
+    if (MC.reset_match(Op1, m_OneUse(m_FSub(m_Value(X), m_Value(Y))))) {
       Value *NewSub = MCBuilder.CreateFSubFMF(Builder, Y, X, &I);
       return MCBuilder.CreateFAddFMF(Op0, NewSub, &I);
     }
@@ -1891,21 +1891,21 @@ Instruction *InstCombiner::visitFSubGeneric(BinaryOpTy &I) {
   // X - C --> X + (-C)
   // But don't transform constant expressions because there's an inverse fold
   // for X + (-Y) --> X - Y.
-  if (MC.try_match(Op1, m_Constant(C)) && !isa<ConstantExpr>(Op1))
+  if (MC.reset_match(Op1, m_Constant(C)) && !isa<ConstantExpr>(Op1))
     return MCBuilder.CreateFAddFMF(Op0, ConstantExpr::getFNeg(C), &I);
 
   // X - (-Y) --> X + Y
-  if (MC.try_match(Op1, m_FNeg(m_Value(Y))))
+  if (MC.reset_match(Op1, m_FNeg(m_Value(Y))))
     return MCBuilder.CreateFAddFMF(Op0, Y, &I);
 
   // Similar to above, but look through a cast of the negated value:
   // X - (fptrunc(-Y)) --> X + fptrunc(Y)
   Type *Ty = I.getType();
-  if (MC.try_match(Op1, m_OneUse(m_FPTrunc(m_FNeg(m_Value(Y))))))
+  if (MC.reset_match(Op1, m_OneUse(m_FPTrunc(m_FNeg(m_Value(Y))))))
     return MCBuilder.CreateFAddFMF(Op0, MCBuilder.CreateFPTrunc(Builder, Y, Ty), &I);
 
   // X - (fpext(-Y)) --> X + fpext(Y)
-  if (MC.try_match(Op1, m_OneUse(m_FPExt(m_FNeg(m_Value(Y))))))
+  if (MC.reset_match(Op1, m_OneUse(m_FPExt(m_FNeg(m_Value(Y))))))
     return MCBuilder.CreateFAddFMF(Op0, MCBuilder.CreateFPExt(Builder, Y, Ty), &I);
 
   // Handle special cases for FSub with selects feeding the operation
@@ -1915,21 +1915,21 @@ Instruction *InstCombiner::visitFSubGeneric(BinaryOpTy &I) {
 
   if (I.hasAllowReassoc() && I.hasNoSignedZeros()) {
     // (Y - X) - Y --> -X
-    if (MC.try_match(Op0, m_FSub(m_Specific(Op1), m_Value(X))))
+    if (MC.reset_match(Op0, m_FSub(m_Specific(Op1), m_Value(X))))
       return MCBuilder.CreateFNegFMF(X, &I);
 
     // Y - (X + Y) --> -X
     // Y - (Y + X) --> -X
-    if (MC.try_match(Op1, m_c_FAdd(m_Specific(Op0), m_Value(X))))
+    if (MC.reset_match(Op1, m_c_FAdd(m_Specific(Op0), m_Value(X))))
       return MCBuilder.CreateFNegFMF(X, &I);
 
     // (X * C) - X --> X * (C - 1.0)
-    if (MC.try_match(Op0, m_FMul(m_Specific(Op1), m_Constant(C)))) {
+    if (MC.reset_match(Op0, m_FMul(m_Specific(Op1), m_Constant(C)))) {
       Constant *CSubOne = ConstantExpr::getFSub(C, ConstantFP::get(Ty, 1.0));
       return MCBuilder.CreateFMulFMF(Op1, CSubOne, &I);
     }
     // X - (X * C) --> X * (1.0 - C)
-    if (MC.try_match(Op1, m_FMul(m_Specific(Op0), m_Constant(C)))) {
+    if (MC.reset_match(Op1, m_FMul(m_Specific(Op0), m_Constant(C)))) {
       Constant *OneSubC = ConstantExpr::getFSub(ConstantFP::get(Ty, 1.0), C);
       return MCBuilder.CreateFMulFMF(Op0, OneSubC, &I);
     }
