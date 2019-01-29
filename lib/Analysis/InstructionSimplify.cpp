@@ -4341,9 +4341,9 @@ static Value *SimplifyFAddInst(Value *Op0, Value *Op1, FastMathFlags FMF,
 
 /// Given operands for an FSub, see if we can fold the result.  If not, this
 /// returns null.
-template<typename MatchContext = EmptyContext>
+template<typename MatchContext>
 static Value *SimplifyFSubInst(Value *Op0, Value *Op1, FastMathFlags FMF,
-                               const SimplifyQuery &Q, unsigned MaxRecurse, MatchContext MC = MatchContext()) {
+                               const SimplifyQuery &Q, unsigned MaxRecurse, MatchContext & MC) {
 
   if (Constant *C = foldOrCommuteConstant(Instruction::FSub, Op0, Op1, Q))
     return C;
@@ -4422,7 +4422,13 @@ Value *llvm::SimplifyFAddInst(Value *Op0, Value *Op1, FastMathFlags FMF,
 
 Value *llvm::SimplifyFSubInst(Value *Op0, Value *Op1, FastMathFlags FMF,
                               const SimplifyQuery &Q) {
-  return ::SimplifyFSubInst(Op0, Op1, FMF, Q, RecursionLimit);
+  EmptyContext EC;
+  return ::SimplifyFSubInst<EmptyContext>(Op0, Op1, FMF, Q, RecursionLimit, EC);
+}
+
+Value *llvm::SimplifyPredicatedFSubInst(Value *Op0, Value *Op1, FastMathFlags FMF,
+                              const SimplifyQuery &Q, PredicatedContext & PC) {
+  return ::SimplifyFSubInst<PredicatedContext>(Op0, Op1, FMF, Q, RecursionLimit, PC);
 }
 
 Value *llvm::SimplifyFMulInst(Value *Op0, Value *Op1, FastMathFlags FMF,
@@ -5020,7 +5026,7 @@ Value *llvm::SimplifyEVLIntrinsic(EVLIntrinsic & EVLInst, const SimplifyQuery &Q
     default:
       return nullptr;
 
-    case Instruction::FSub: return SimplifyFSubInst(EVLInst.getOperand(0), EVLInst.getOperand(1), EVLInst.getFastMathFlags(), Q, RecursionLimit, PC);
+    case Instruction::FSub: return SimplifyPredicatedFSubInst(EVLInst.getOperand(0), EVLInst.getOperand(1), EVLInst.getFastMathFlags(), Q, RecursionLimit, PC);
   }
 }
 

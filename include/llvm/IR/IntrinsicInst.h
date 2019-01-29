@@ -207,6 +207,29 @@ namespace llvm {
 
   class EVLIntrinsic : public IntrinsicInst {
   public:
+    enum class EVLTypeToken : int8_t {
+      Scalar = 1, // scalar operand type
+      Vector = 2, // vectorized operand type
+      Mask = 3    // vector mask type
+    };
+
+    using TypeTokenVec = SmallVector<EVLTypeToken, 4>;
+    using ShortTypeVec = SmallVector<Type*, 4>;
+
+    struct
+    EVLIntrinsicDesc {
+      Intrinsic::ID ID; // LLVM Intrinsic ID.
+      TypeTokenVec typeTokens; // Type Parmeters for the LLVM Intrinsic.
+      int MaskPos; // Parameter index of the Mask parameter.
+      int EVLPos; // Parameter index of the EVL parameter.
+    };
+
+    // Translate this generic Opcode to an EVLIntrinsic
+    static EVLIntrinsicDesc GetEVLIntrinsicDesc(unsigned OC);
+
+    // Generate the disambiguating type vec for this EVL Intrinsic
+    static EVLIntrinsic::ShortTypeVec
+    EncodeTypeTokens(EVLIntrinsic::TypeTokenVec TTVec, Type & VectorTy, Type & ScalarTy);
 
     bool isUnaryOp() const;
     bool isBinaryOp() const;

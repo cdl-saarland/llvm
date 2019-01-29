@@ -37,6 +37,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/PredicatedInst.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
@@ -1875,6 +1876,14 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
   if (CI.getFunction()->doesNotThrow() && !CI.doesNotThrow()) {
     CI.setDoesNotThrow();
     return &CI;
+  }
+
+  // Predicated instruction patterns
+  auto * EVLInst = dyn_cast<EVLIntrinsic>(&CI);
+  if (EVLInst) {
+    auto * PredInst = cast<PredicatedInstruction>(EVLInst);
+    auto Result = visitPredicatedInstruction(PredInst);
+    if (Result) return Result;
   }
 
   IntrinsicInst *II = dyn_cast<IntrinsicInst>(&CI);

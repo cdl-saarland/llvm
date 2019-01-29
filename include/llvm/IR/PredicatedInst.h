@@ -25,9 +25,13 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/IR/MatcherCast.h"
+
 #include <cstddef>
 
 namespace llvm {
+
+class BasicBlock;
 
 class PredicatedInstruction : public User {
 public:
@@ -35,6 +39,13 @@ public:
   // instantiated.
   PredicatedInstruction() = delete;
   ~PredicatedInstruction() = delete;
+
+  void copyIRFlags(const Value * V, bool IncludeWrapFlags) {
+    cast<Instruction>(this)->copyIRFlags(V, IncludeWrapFlags);
+  }
+
+  BasicBlock* getParent() { return cast<Instruction>(this)->getParent(); }
+  const BasicBlock* getParent() const { return cast<const Instruction>(this)->getParent(); }
 
   void *operator new(size_t s) = delete;
 
@@ -57,6 +68,11 @@ public:
     return cast<Instruction>(this)->getOpcode();
   }
 
+#if 0
+  operator Instruction() { return cast<Value>(this); }
+  operator const Value() const { return cast<const Value>(this); }
+#endif
+
   static bool classof(const Instruction * I) { return isa<Instruction>(I); }
   static bool classof(const ConstantExpr * CE) { return false; }
   static bool classof(const Value *V) { return isa<Instruction>(V); }
@@ -70,6 +86,11 @@ public:
   ~PredicatedOperator() = delete;
 
   void *operator new(size_t s) = delete;
+
+#if 0
+  operator Value*() { return cast<Value>(this); }
+  operator const Value*() const { return cast<const Value>(this); }
+#endif
 
   /// Return the opcode for this Instruction or ConstantExpr.
   unsigned getOpcode() const {
@@ -93,6 +114,13 @@ public:
     return thisEVL->getVectorLength();
   }
 
+  void copyIRFlags(const Value * V, bool IncludeWrapFlags = true);
+  FastMathFlags getFastMathFlags() const {
+    auto * I = dyn_cast<Instruction>(this);
+    if (I) return I->getFastMathFlags();
+    else return FastMathFlags();
+  }
+
   static bool classof(const Instruction * I) { return isa<EVLIntrinsic>(I) || isa<Operator>(I); }
   static bool classof(const ConstantExpr * CE) { return isa<Operator>(CE); }
   static bool classof(const Value *V) { return isa<EVLIntrinsic>(V) || isa<Operator>(V); }
@@ -104,6 +132,8 @@ public:
   // instantiated.
   PredicatedBinaryOperator() = delete;
   ~PredicatedBinaryOperator() = delete;
+
+  using BinaryOps = Instruction::BinaryOps;
 
   void *operator new(size_t s) = delete;
 
@@ -118,6 +148,45 @@ public:
     if (I && classof(I)) return true;
     auto * CE = dyn_cast<ConstantExpr>(V);
     return CE && classof(CE);
+  }
+
+  /// Construct a predicated binary instruction, given the opcode and the two
+  /// operands.
+  static Instruction* Create(Module * Mod,
+                                   Value *Mask, Value *VectorLen,
+                                   Instruction::BinaryOps Opc,
+                                   Value *V1, Value *V2,
+                                   const Twine &Name,
+                                   BasicBlock * InsertAtEnd,
+                                   Instruction * InsertBefore);
+
+  static Instruction* Create(Module *Mod,
+                                          Value *Mask, Value *VectorLen,
+                                          BinaryOps Opc,
+                                          Value *V1, Value *V2,
+                                          const Twine &Name = Twine(),
+                                          Instruction *InsertBefore = nullptr) {
+    return Create(Mod, Mask, VectorLen, Opc, V1, V2, Name, nullptr, InsertBefore);
+  }
+
+  static Instruction* Create(Module *Mod,
+                                          Value *Mask, Value *VectorLen,
+                                          BinaryOps Opc,
+                                          Value *V1, Value *V2,
+                                          const Twine &Name,
+                                          BasicBlock *InsertAtEnd) {
+    return Create(Mod, Mask, VectorLen, Opc, V1, V2, Name, InsertAtEnd, nullptr);
+  }
+
+  static Instruction* CreateWithCopiedFlags(Module *Mod,
+                                                         Value *Mask, Value* VectorLen,
+                                                         BinaryOps Opc,
+                                                         Value *V1, Value *V2,
+                                                         Instruction *CopyBO,
+                                                         const Twine &Name = "") {
+    Instruction *BO = Create(Mod, Mask, VectorLen, Opc, V1, V2, Name, nullptr, nullptr);
+    BO->copyIRFlags(CopyBO);
+    return BO;
   }
 };
 
@@ -225,26 +294,33 @@ namespace PatternMatch {
 struct PredicatedContext {
   Value * Mask;
   Value * VectorLength;
+  Module * Mod;
 
   void reset(Value * V) {
-    auto * PredI = dyn_cast<PredicatedInstruction>(V);
-    if (!PredI) {
+    auto * PI = dyn_cast<PredicatedInstruction>(V);
+    if (!PI) {
       VectorLength = nullptr;
       Mask = nullptr;
+      Mod = nullptr;
     } else {
-      VectorLength = PredI->getVectorLength();
-      Mask = PredI->getMask();
+      VectorLength = PI->getVectorLength();
+      Mask = PI->getMask();
+      Mod = PI->getParent()->getParent()->getParent();
     }
   }
 
-  PredicatedContext(PredicatedInstruction & PI)
-  : Mask (PI.getMask())
-  , VectorLength (PI.getVectorLength())
-  {}
+  PredicatedContext(Value * Val)
+  : Mask(nullptr)
+  , VectorLength(nullptr)
+  , Mod(nullptr)
+  {
+    reset(Val);
+  }
 
   PredicatedContext(const PredicatedContext & PC)
   : Mask (PC.Mask)
   , VectorLength(PC.VectorLength)
+  , Mod(nullptr)
   {}
 
   // accept a match where \p Val is in a non-leaf position in a match pattern
@@ -267,8 +343,8 @@ struct PredicatedContext {
 
   // match with consistent context
   template <typename Val, typename Pattern> bool try_match(Val *V, const Pattern &P) {
-    PredicatedContext SubContext(*this);
-    return const_cast<Pattern &>(P).match_context(V, SubContext);
+    reset(V);
+    return const_cast<Pattern &>(P).match_context(V, *this);
   }
 };
 
