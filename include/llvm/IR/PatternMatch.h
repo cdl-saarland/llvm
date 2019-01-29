@@ -113,7 +113,7 @@ template <typename SubPattern_t> struct OneUse_match {
   }
 
   template <typename OpTy, typename MatchContext> bool match_context(OpTy *V, MatchContext & MContext) {
-    return V->hasOneUse() && SubPattern.match(V);
+    return V->hasOneUse() && SubPattern.match_context(V, MContext);
   }
 };
 

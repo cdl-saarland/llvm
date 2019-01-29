@@ -318,9 +318,9 @@ struct PredicatedContext {
   }
 
   PredicatedContext(const PredicatedContext & PC)
-  : Mask (PC.Mask)
+  : Mask(PC.Mask)
   , VectorLength(PC.VectorLength)
-  , Mod(nullptr)
+  , Mod(PC.Mod)
   {}
 
   // accept a match where \p Val is in a non-leaf position in a match pattern
