@@ -71,9 +71,8 @@ Result: EVL has superseded earlier vector intrinsics.
 ---------------------------------------
 
 - Vector instructions have an optional mask and vector length parameter. These lower to EVL SDNodes (from Stage 2).
-- Phase out EVL intrinsics, only keeping those that are not equivalent to vectorized scalar instructions (reduce, 
-- InstCombine/InstSimplify expect predication in regular Instructions (Stage (3) has laid the groundwork).
-shuffles, ..).
+- Phase out EVL intrinsics, only keeping those that are not equivalent to vectorized scalar instructions (reduce,  shuffles, ..)
+- InstCombine/InstSimplify expect predication in regular Instructions (Stage (3) has laid the groundwork). 
 
 Result: Native vector predication in IR.
 
