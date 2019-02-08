@@ -139,21 +139,21 @@ ConstrainedFPIntrinsic::getExceptionBehavior() const {
 }
 
 CmpInst::Predicate
-EVLIntrinsic::getCmpPredicate() const {
+VPIntrinsic::getCmpPredicate() const {
   return static_cast<CmpInst::Predicate>(cast<ConstantInt>(getArgOperand(4))->getZExtValue());
 }
 
-bool EVLIntrinsic::isUnaryOp() const {
+bool VPIntrinsic::isUnaryOp() const {
   switch (getIntrinsicID()) {
     default:
       return false;
-    case Intrinsic::evl_fneg:
+    case Intrinsic::vp_fneg:
       return true;
   }
 }
 
 Value*
-EVLIntrinsic::getMask() const {
+VPIntrinsic::getMask() const {
   if (isBinaryOp()) { return getArgOperand(2); }
   else if (isTernaryOp()) { return getArgOperand(3); }
   else if (isUnaryOp()) { return getArgOperand(1); }
@@ -161,121 +161,121 @@ EVLIntrinsic::getMask() const {
 }
 
 Value*
-EVLIntrinsic::getVectorLength() const {
+VPIntrinsic::getVectorLength() const {
   if (isBinaryOp()) { return getArgOperand(3); }
   else if (isTernaryOp()) { return getArgOperand(4); }
   else if (isUnaryOp()) { return getArgOperand(2); }
   else return nullptr;
 }
 
-bool EVLIntrinsic::isBinaryOp() const {
+bool VPIntrinsic::isBinaryOp() const {
   switch (getIntrinsicID()) {
     default:
       return false;
 
-    case Intrinsic::evl_and:
-    case Intrinsic::evl_or:
-    case Intrinsic::evl_xor:
-    case Intrinsic::evl_ashr:
-    case Intrinsic::evl_lshr:
-    case Intrinsic::evl_shl:
+    case Intrinsic::vp_and:
+    case Intrinsic::vp_or:
+    case Intrinsic::vp_xor:
+    case Intrinsic::vp_ashr:
+    case Intrinsic::vp_lshr:
+    case Intrinsic::vp_shl:
 
-    case Intrinsic::evl_fadd:
-    case Intrinsic::evl_fsub:
-    case Intrinsic::evl_fmul:
-    case Intrinsic::evl_fdiv:
-    case Intrinsic::evl_frem:
+    case Intrinsic::vp_fadd:
+    case Intrinsic::vp_fsub:
+    case Intrinsic::vp_fmul:
+    case Intrinsic::vp_fdiv:
+    case Intrinsic::vp_frem:
 
-    case Intrinsic::evl_reduce_or:
-    case Intrinsic::evl_reduce_xor:
-    case Intrinsic::evl_reduce_add:
-    case Intrinsic::evl_reduce_mul:
-    case Intrinsic::evl_reduce_smax:
-    case Intrinsic::evl_reduce_smin:
-    case Intrinsic::evl_reduce_umax:
-    case Intrinsic::evl_reduce_umin:
+    case Intrinsic::vp_reduce_or:
+    case Intrinsic::vp_reduce_xor:
+    case Intrinsic::vp_reduce_add:
+    case Intrinsic::vp_reduce_mul:
+    case Intrinsic::vp_reduce_smax:
+    case Intrinsic::vp_reduce_smin:
+    case Intrinsic::vp_reduce_umax:
+    case Intrinsic::vp_reduce_umin:
 
-    case Intrinsic::evl_reduce_fadd:
-    case Intrinsic::evl_reduce_fmul:
-    case Intrinsic::evl_reduce_fmax:
-    case Intrinsic::evl_reduce_fmin:
+    case Intrinsic::vp_reduce_fadd:
+    case Intrinsic::vp_reduce_fmul:
+    case Intrinsic::vp_reduce_fmax:
+    case Intrinsic::vp_reduce_fmin:
 
-    case Intrinsic::evl_add:
-    case Intrinsic::evl_sub:
-    case Intrinsic::evl_mul:
-    case Intrinsic::evl_udiv:
-    case Intrinsic::evl_sdiv:
-    case Intrinsic::evl_urem:
-    case Intrinsic::evl_srem:
+    case Intrinsic::vp_add:
+    case Intrinsic::vp_sub:
+    case Intrinsic::vp_mul:
+    case Intrinsic::vp_udiv:
+    case Intrinsic::vp_sdiv:
+    case Intrinsic::vp_urem:
+    case Intrinsic::vp_srem:
       return true;
   }
 }
 
-bool EVLIntrinsic::isTernaryOp() const {
+bool VPIntrinsic::isTernaryOp() const {
   switch (getIntrinsicID()) {
     default:
       return false;
-    case Intrinsic::evl_fma:
-    case Intrinsic::evl_select:
+    case Intrinsic::vp_fma:
+    case Intrinsic::vp_select:
       return true;
   }
 }
 
-EVLIntrinsic::EVLIntrinsicDesc
-EVLIntrinsic::GetEVLIntrinsicDesc(unsigned OC) {
+VPIntrinsic::VPIntrinsicDesc
+VPIntrinsic::GetVPIntrinsicDesc(unsigned OC) {
   switch (OC) {
     // fp unary
-    case Instruction::FNeg: return EVLIntrinsicDesc{ Intrinsic::evl_fneg, TypeTokenVec{EVLTypeToken::Vector}, 1, 2}; break;
+    case Instruction::FNeg: return VPIntrinsicDesc{ Intrinsic::vp_fneg, TypeTokenVec{VPTypeToken::Vector}, 1, 2}; break;
 
     // fp binary
-    case Instruction::FAdd: return EVLIntrinsicDesc{ Intrinsic::evl_fadd, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::FSub: return EVLIntrinsicDesc{ Intrinsic::evl_fsub, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::FMul: return EVLIntrinsicDesc{ Intrinsic::evl_fmul, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::FDiv: return EVLIntrinsicDesc{ Intrinsic::evl_fdiv, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::FRem: return EVLIntrinsicDesc{ Intrinsic::evl_frem, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
+    case Instruction::FAdd: return VPIntrinsicDesc{ Intrinsic::vp_fadd, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::FSub: return VPIntrinsicDesc{ Intrinsic::vp_fsub, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::FMul: return VPIntrinsicDesc{ Intrinsic::vp_fmul, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::FDiv: return VPIntrinsicDesc{ Intrinsic::vp_fdiv, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::FRem: return VPIntrinsicDesc{ Intrinsic::vp_frem, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
 
     // sign-oblivious int
-    case Instruction::Add: return EVLIntrinsicDesc{ Intrinsic::evl_add, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::Sub: return EVLIntrinsicDesc{ Intrinsic::evl_sub, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::Mul: return EVLIntrinsicDesc{ Intrinsic::evl_mul, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
+    case Instruction::Add:  return VPIntrinsicDesc{ Intrinsic::vp_add, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::Sub:  return VPIntrinsicDesc{ Intrinsic::vp_sub, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::Mul:  return VPIntrinsicDesc{ Intrinsic::vp_mul, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
 
     // signed/unsigned int
-    case Instruction::SDiv: return EVLIntrinsicDesc{ Intrinsic::evl_sdiv, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::UDiv: return EVLIntrinsicDesc{ Intrinsic::evl_udiv, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::SRem: return EVLIntrinsicDesc{ Intrinsic::evl_srem, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::URem: return EVLIntrinsicDesc{ Intrinsic::evl_urem, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
+    case Instruction::SDiv: return VPIntrinsicDesc{ Intrinsic::vp_sdiv, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::UDiv: return VPIntrinsicDesc{ Intrinsic::vp_udiv, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::SRem: return VPIntrinsicDesc{ Intrinsic::vp_srem, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::URem: return VPIntrinsicDesc{ Intrinsic::vp_urem, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
 
     // logical
-    case Instruction::Or:  return EVLIntrinsicDesc{ Intrinsic::evl_or, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::And: return EVLIntrinsicDesc{ Intrinsic::evl_and, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::Xor: return EVLIntrinsicDesc{ Intrinsic::evl_xor, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
+    case Instruction::Or:   return VPIntrinsicDesc{ Intrinsic::vp_or,  TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::And:  return VPIntrinsicDesc{ Intrinsic::vp_and, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::Xor:  return VPIntrinsicDesc{ Intrinsic::vp_xor, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
 
-    case Instruction::LShr: return EVLIntrinsicDesc{ Intrinsic::evl_lshr, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::AShr: return EVLIntrinsicDesc{ Intrinsic::evl_ashr, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
-    case Instruction::Shl:  return EVLIntrinsicDesc{ Intrinsic::evl_shl, TypeTokenVec{EVLTypeToken::Vector}, 2, 3}; break;
+    case Instruction::LShr: return VPIntrinsicDesc{ Intrinsic::vp_lshr, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::AShr: return VPIntrinsicDesc{ Intrinsic::vp_ashr, TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
+    case Instruction::Shl:  return VPIntrinsicDesc{ Intrinsic::vp_shl,  TypeTokenVec{VPTypeToken::Vector}, 2, 3}; break;
 
     // comparison
     case Instruction::ICmp:
     case Instruction::FCmp:
-      return EVLIntrinsicDesc{ Intrinsic::evl_cmp, TypeTokenVec{EVLTypeToken::Mask, EVLTypeToken::Vector}, 2, 3}; break;
+      return VPIntrinsicDesc{ Intrinsic::vp_cmp, TypeTokenVec{VPTypeToken::Mask, VPTypeToken::Vector}, 2, 3}; break;
 
   default:
-    return EVLIntrinsicDesc{Intrinsic::not_intrinsic, TypeTokenVec(), -1, -1};
+    return VPIntrinsicDesc{Intrinsic::not_intrinsic, TypeTokenVec(), -1, -1};
   }
 }
 
-EVLIntrinsic::ShortTypeVec
-EVLIntrinsic::EncodeTypeTokens(EVLIntrinsic::TypeTokenVec TTVec, Type & VectorTy, Type & ScalarTy) {
+VPIntrinsic::ShortTypeVec
+VPIntrinsic::EncodeTypeTokens(VPIntrinsic::TypeTokenVec TTVec, Type & VectorTy, Type & ScalarTy) {
   ShortTypeVec STV;
 
   for (auto Token : TTVec) {
     switch (Token) {
     default:
-      llvm_unreachable("unsupported token"); // unsupported EVLTypeToken
+      llvm_unreachable("unsupported token"); // unsupported VPTypeToken
 
-    case EVLIntrinsic::EVLTypeToken::Scalar: STV.push_back(&ScalarTy); break;
-    case EVLIntrinsic::EVLTypeToken::Vector: STV.push_back(&VectorTy); break;
-    case EVLIntrinsic::EVLTypeToken::Mask:
+    case VPIntrinsic::VPTypeToken::Scalar: STV.push_back(&ScalarTy); break;
+    case VPIntrinsic::VPTypeToken::Vector: STV.push_back(&VectorTy); break;
+    case VPIntrinsic::VPTypeToken::Mask:
       auto NumElems = VectorTy.getVectorNumElements();
       auto MaskTy = VectorType::get(Type::getInt1Ty(VectorTy.getContext()), NumElems);
       STV.push_back(MaskTy); break;

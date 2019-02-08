@@ -1879,9 +1879,9 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
   }
 
   // Predicated instruction patterns
-  auto * EVLInst = dyn_cast<EVLIntrinsic>(&CI);
-  if (EVLInst) {
-    auto * PredInst = cast<PredicatedInstruction>(EVLInst);
+  auto * VPInst = dyn_cast<VPIntrinsic>(&CI);
+  if (VPInst) {
+    auto * PredInst = cast<PredicatedInstruction>(VPInst);
     auto Result = visitPredicatedInstruction(PredInst);
     if (Result) return Result;
   }
@@ -1950,7 +1950,8 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     if (Changed) return II;
   }
 
-  // For vector result intrinsics, use the generic demanded vector support.
+  // For vector result intrinsics, use the generic demanded vector support to
+  // simplify any operands before moving on to the per-intrinsic rules.
   if (II->getType()->isVectorTy()) {
     auto VWidth = II->getType()->getVectorNumElements();
     APInt UndefElts(VWidth, 0);

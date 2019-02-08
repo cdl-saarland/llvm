@@ -1,4 +1,4 @@
-#include <llvm/IR/EVLBuilder.h>
+#include <llvm/IR/VPBuilder.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/PredicatedInst.h>
@@ -6,19 +6,19 @@
 
 namespace {
   using namespace llvm;
-  using ShortTypeVec = EVLIntrinsic::ShortTypeVec;
+  using ShortTypeVec = VPIntrinsic::ShortTypeVec;
   using ShortValueVec = SmallVector<Value*, 4>;
 }
 
 namespace llvm {
 
 Module &
-EVLBuilder::getModule() const {
+VPBuilder::getModule() const {
   return *Builder.GetInsertBlock()->getParent()->getParent();
 }
 
 Value&
-EVLBuilder::GetMaskForType(VectorType & VecTy) {
+VPBuilder::GetMaskForType(VectorType & VecTy) {
   if (Mask) return *Mask;
 
   auto * boolTy = Builder.getInt1Ty();
@@ -27,7 +27,7 @@ EVLBuilder::GetMaskForType(VectorType & VecTy) {
 }
 
 Value&
-EVLBuilder::GetEVLForType(VectorType & VecTy) {
+VPBuilder::GetEVLForType(VectorType & VecTy) {
   if (ExplicitVectorLength) return *ExplicitVectorLength;
 
   auto * intTy = Builder.getInt32Ty();
@@ -35,11 +35,11 @@ EVLBuilder::GetEVLForType(VectorType & VecTy) {
 }
 
 Value*
-EVLBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
+VPBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
 
   auto oc = Inst.getOpcode();
 
-  auto evlDesc = EVLIntrinsic::GetEVLIntrinsicDesc(oc);
+  auto evlDesc = VPIntrinsic::GetVPIntrinsicDesc(oc);
   if (evlDesc.ID == Intrinsic::not_intrinsic) {
     return nullptr;
   }
@@ -51,20 +51,20 @@ EVLBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
     Value & FirstOp = *VecOpArray[0];
     Value & SndOp = *VecOpArray[1];
 
-    // Fetch the EVL intrinsic
+    // Fetch the VP intrinsic
     auto & VecTy = cast<VectorType>(*FirstOp.getType());
     assert((evlDesc.MaskPos == 2) && (evlDesc.EVLPos == 3));
 
-    auto & EVLCall =
+    auto & VPCall =
       cast<Instruction>(*PredicatedBinaryOperator::Create(&getModule(), &GetMaskForType(VecTy), &GetEVLForType(VecTy), static_cast<Instruction::BinaryOps>(oc), &FirstOp, &SndOp));
-    Builder.Insert(&EVLCall);
+    Builder.Insert(&VPCall);
 
     // transfer fast math flags
     if (isa<FPMathOperator>(Inst)) {
-      EVLCall.copyFastMathFlags(Inst.getFastMathFlags());
+      VPCall.copyFastMathFlags(Inst.getFastMathFlags());
     }
 
-    return &EVLCall;
+    return &VPCall;
   }
 
   if ((oc <= Instruction::UnaryOpsBegin) &&
@@ -72,24 +72,24 @@ EVLBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
     assert(VecOpArray.size() == 1);
     Value & FirstOp = *VecOpArray[0];
 
-    // Fetch the EVL intrinsic
+    // Fetch the VP intrinsic
     auto & VecTy = cast<VectorType>(*FirstOp.getType());
     auto & ScalarTy = *VecTy.getVectorElementType();
-    auto * Func = Intrinsic::getDeclaration(&getModule(), evlDesc.ID, EVLIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
+    auto * Func = Intrinsic::getDeclaration(&getModule(), evlDesc.ID, VPIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
 
     assert((evlDesc.MaskPos == 1) && (evlDesc.EVLPos == 2));
 
     // Materialize the Call
     ShortValueVec Args{&FirstOp, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
 
-    auto & EVLCall = *Builder.CreateCall(Func, Args);
+    auto & VPCall = *Builder.CreateCall(Func, Args);
 
     // transfer fast math flags
     if (isa<FPMathOperator>(Inst)) {
-      cast<CallInst>(EVLCall).copyFastMathFlags(Inst.getFastMathFlags());
+      cast<CallInst>(VPCall).copyFastMathFlags(Inst.getFastMathFlags());
     }
 
-    return &EVLCall;
+    return &VPCall;
   }
 
   switch (oc) {
@@ -102,10 +102,10 @@ EVLBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
       Value & FirstOp = *VecOpArray[0];
       Value & SndOp = *VecOpArray[1];
 
-      // Fetch the EVL intrinsic
+      // Fetch the VP intrinsic
       auto & VecTy = cast<VectorType>(*FirstOp.getType());
       auto & ScalarTy = *VecTy.getVectorElementType();
-      auto * Func = Intrinsic::getDeclaration(&getModule(), evlDesc.ID, EVLIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
+      auto * Func = Intrinsic::getDeclaration(&getModule(), evlDesc.ID, VPIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
 
       assert((evlDesc.MaskPos == 2) && (evlDesc.EVLPos == 3));
 
@@ -126,11 +126,11 @@ EVLBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
       Value & OnTrueOp = *VecOpArray[1];
       Value & OnFalseOp = *VecOpArray[2];
 
-      // Fetch the EVL intrinsic
+      // Fetch the VP intrinsic
       auto & VecTy = cast<VectorType>(*OnTrueOp.getType());
       auto & ScalarTy = *VecTy.getVectorElementType();
 
-      auto * Func = Intrinsic::getDeclaration(&getModule(), evlDesc.ID, EVLIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
+      auto * Func = Intrinsic::getDeclaration(&getModule(), evlDesc.ID, VPIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
 
       assert((evlDesc.MaskPos == 2) && (evlDesc.EVLPos == 3));
 
@@ -143,14 +143,14 @@ EVLBuilder::CreateVectorCopy(Instruction & Inst, ValArray VecOpArray) {
 }
 
 VectorType&
-EVLBuilder::getVectorType(Type &ElementTy) {
+VPBuilder::getVectorType(Type &ElementTy) {
   return *VectorType::get(&ElementTy, StaticVectorLength);
 }
 
 Value&
-EVLBuilder::CreateContiguousStore(Value & Val, Value & Pointer, unsigned Alignment) {
+VPBuilder::CreateContiguousStore(Value & Val, Value & Pointer, unsigned Alignment) {
   auto & VecTy = cast<VectorType>(*Val.getType());
-  auto * StoreFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_store, {Val.getType(), Pointer.getType()});
+  auto * StoreFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::vp_store, {Val.getType(), Pointer.getType()});
   ShortValueVec Args{&Val, &Pointer, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
   CallInst &StoreCall = *Builder.CreateCall(StoreFunc, Args);
   if (Alignment) StoreCall.addParamAttr(1, Attribute::getWithAlignment(getContext(), Alignment));
@@ -158,11 +158,11 @@ EVLBuilder::CreateContiguousStore(Value & Val, Value & Pointer, unsigned Alignme
 }
 
 Value&
-EVLBuilder::CreateContiguousLoad(Value & Pointer, unsigned Alignment) {
+VPBuilder::CreateContiguousLoad(Value & Pointer, unsigned Alignment) {
   auto & PointerTy = cast<PointerType>(*Pointer.getType());
   auto & VecTy = getVectorType(*PointerTy.getPointerElementType());
 
-  auto * LoadFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_load, {&VecTy, &PointerTy});
+  auto * LoadFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::vp_load, {&VecTy, &PointerTy});
   ShortValueVec Args{&Pointer, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
   CallInst &LoadCall= *Builder.CreateCall(LoadFunc, Args);
   if (Alignment) LoadCall.addParamAttr(1, Attribute::getWithAlignment(getContext(), Alignment));
@@ -170,9 +170,9 @@ EVLBuilder::CreateContiguousLoad(Value & Pointer, unsigned Alignment) {
 }
 
 Value&
-EVLBuilder::CreateScatter(Value & Val, Value & PointerVec, unsigned Alignment) {
+VPBuilder::CreateScatter(Value & Val, Value & PointerVec, unsigned Alignment) {
   auto & VecTy = cast<VectorType>(*Val.getType());
-  auto * ScatterFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_scatter, {Val.getType(), PointerVec.getType()});
+  auto * ScatterFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::vp_scatter, {Val.getType(), PointerVec.getType()});
   ShortValueVec Args{&Val, &PointerVec, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
   CallInst &ScatterCall = *Builder.CreateCall(ScatterFunc, Args);
   if (Alignment) ScatterCall.addParamAttr(1, Attribute::getWithAlignment(getContext(), Alignment));
@@ -180,11 +180,11 @@ EVLBuilder::CreateScatter(Value & Val, Value & PointerVec, unsigned Alignment) {
 }
 
 Value&
-EVLBuilder::CreateGather(Value & PointerVec, unsigned Alignment) {
+VPBuilder::CreateGather(Value & PointerVec, unsigned Alignment) {
   auto & PointerVecTy = cast<VectorType>(*PointerVec.getType());
   auto & ElemTy = *cast<PointerType>(*PointerVecTy.getVectorElementType()).getPointerElementType();
   auto & VecTy = *VectorType::get(&ElemTy, PointerVecTy.getNumElements());
-  auto * GatherFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::evl_gather, {&VecTy, &PointerVecTy});
+  auto * GatherFunc = Intrinsic::getDeclaration(&getModule(), Intrinsic::vp_gather, {&VecTy, &PointerVecTy});
 
   ShortValueVec Args{&PointerVec, &GetMaskForType(VecTy), &GetEVLForType(VecTy)};
   CallInst &GatherCall = *Builder.CreateCall(GatherFunc, Args);

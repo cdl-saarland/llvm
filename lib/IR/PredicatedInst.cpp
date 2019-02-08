@@ -27,7 +27,7 @@ PredicatedBinaryOperator::Create(Module * Mod,
                                  Instruction * InsertBefore) {
   assert(!(InsertAtEnd && InsertBefore));
 
-  auto evlDesc = EVLIntrinsic::GetEVLIntrinsicDesc(Opc);
+  auto evlDesc = VPIntrinsic::GetVPIntrinsicDesc(Opc);
 
   if ((!Mod ||
       (!Mask && !VectorLen)) ||
@@ -39,12 +39,12 @@ PredicatedBinaryOperator::Create(Module * Mod,
     }
   }
 
-  assert(Mod && "Need a module to emit EVL Intrinsics");
+  assert(Mod && "Need a module to emit VP Intrinsics");
 
-  // Fetch the EVL intrinsic
+  // Fetch the VP intrinsic
   auto & VecTy = cast<VectorType>(*V1->getType());
   auto & ScalarTy = *VecTy.getVectorElementType();
-  auto * Func = Intrinsic::getDeclaration(Mod, evlDesc.ID, EVLIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
+  auto * Func = Intrinsic::getDeclaration(Mod, evlDesc.ID, VPIntrinsic::EncodeTypeTokens(evlDesc.typeTokens, VecTy, ScalarTy));
 
   assert((evlDesc.MaskPos == 2) && (evlDesc.EVLPos == 3));
 

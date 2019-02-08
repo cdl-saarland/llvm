@@ -1,5 +1,5 @@
-#ifndef LLVM_IR_EVLBUILDER_H
-#define LLVM_IR_EVLBUILDER_H
+#ifndef LLVM_IR_VPBUILDER_H
+#define LLVM_IR_VPBUILDER_H
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
@@ -12,7 +12,7 @@ namespace llvm {
 
 using ValArray = ArrayRef<Value*>;
 
-class EVLBuilder {
+class VPBuilder {
   IRBuilder<> & Builder;
   // Explicit mask parameter
   Value * Mask;
@@ -26,7 +26,7 @@ class EVLBuilder {
   Value& GetEVLForType(VectorType & VecTy);
 
 public:
-  EVLBuilder(IRBuilder<> & _builder)
+  VPBuilder(IRBuilder<> & _builder)
   : Builder(_builder)
   , Mask(nullptr)
   , ExplicitVectorLength(nullptr)
@@ -40,11 +40,11 @@ public:
   VectorType& getVectorType(Type &ElementTy);
 
   // Predication context tracker
-  EVLBuilder& setMask(Value * _Mask) { Mask = _Mask;  return *this; }
-  EVLBuilder& setEVL(Value * _ExplicitVectorLength) { ExplicitVectorLength = _ExplicitVectorLength; return *this; }
-  EVLBuilder& setStaticVL(int VLen) { StaticVectorLength = VLen; return *this; }
+  VPBuilder& setMask(Value * _Mask) { Mask = _Mask;  return *this; }
+  VPBuilder& setEVL(Value * _ExplicitVectorLength) { ExplicitVectorLength = _ExplicitVectorLength; return *this; }
+  VPBuilder& setStaticVL(int VLen) { StaticVectorLength = VLen; return *this; }
 
-  EVLIntrinsic::EVLIntrinsicDesc GetEVLIntrinsicDesc(unsigned OC);
+  VPIntrinsic::VPIntrinsicDesc GetVPIntrinsicDesc(unsigned OC);
 
   // Create a map-vectorized copy of the instruction \p Inst with the underlying IRBuilder instance.
   // This operation may return nullptr if the instruction could not be vectorized.
@@ -229,4 +229,4 @@ public:
 
 } // namespace llvm
 
-#endif // LLVM_IR_EVLBUILDER_H
+#endif // LLVM_IR_VPBUILDER_H

@@ -22,7 +22,6 @@ add_llvm_library(LLVMCore
   DiagnosticInfo.cpp
   DiagnosticPrinter.cpp
   Dominators.cpp
-  EVLBuilder.cpp
   Function.cpp
   GVMaterializer.cpp
   Globals.cpp
@@ -48,18 +47,18 @@ add_llvm_library(LLVMCore
   PassRegistry.cpp
   PassTimingInfo.cpp
   PredicatedInst.cpp
+  ProfileSummary.cpp
   RemarkStreamer.cpp
   SafepointIRVerifier.cpp
-  ProfileSummary.cpp
   Statepoint.cpp
   Type.cpp
   TypeFinder.cpp
   Use.cpp
   User.cpp
+  VPBuilder.cpp
   Value.cpp
   ValueSymbolTable.cpp
   Verifier.cpp
-
   ADDITIONAL_HEADER_DIRS
   ${LLVM_MAIN_INCLUDE_DIR}/llvm/IR
 

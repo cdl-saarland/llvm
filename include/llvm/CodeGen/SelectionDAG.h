@@ -1100,17 +1100,17 @@ public:
                           SDValue Offset, ISD::MemIndexedMode AM);
 
   /// Returns sum of the base pointer and offset.
-  SDValue getLoadEVL(EVT VT, const SDLoc &dl, SDValue Chain, SDValue Ptr,
+  SDValue getLoadVP(EVT VT, const SDLoc &dl, SDValue Chain, SDValue Ptr,
                         SDValue Mask, SDValue VLen, EVT MemVT,
                         MachineMemOperand *MMO, ISD::LoadExtType);
 
-  SDValue getStoreEVL(SDValue Chain, const SDLoc &dl, SDValue Val,
+  SDValue getStoreVP(SDValue Chain, const SDLoc &dl, SDValue Val,
                          SDValue Ptr, SDValue Mask, SDValue VLen,
                          EVT MemVT, MachineMemOperand *MMO,
                          bool IsTruncating = false);
-  SDValue getGatherEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+  SDValue getGatherVP(SDVTList VTs, EVT VT, const SDLoc &dl,
                           ArrayRef<SDValue> Ops, MachineMemOperand *MMO);
-  SDValue getScatterEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+  SDValue getScatterVP(SDVTList VTs, EVT VT, const SDLoc &dl,
                            ArrayRef<SDValue> Ops, MachineMemOperand *MMO);
 
   /// Returns sum of the base pointer and offset.

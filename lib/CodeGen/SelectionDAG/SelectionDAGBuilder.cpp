@@ -4329,10 +4329,10 @@ void SelectionDAGBuilder::visitMaskedStore(const CallInst &I,
   setValue(&I, StoreNode);
 }
 
-void SelectionDAGBuilder::visitStoreEVL(const CallInst &I) {
+void SelectionDAGBuilder::visitStoreVP(const CallInst &I) {
   SDLoc sdl = getCurSDLoc();
 
-  auto getEVLStoreOps = [&](Value* &Ptr, Value* &Mask, Value* &Src0,
+  auto getVPStoreOps = [&](Value* &Ptr, Value* &Mask, Value* &Src0,
                             Value * &VLen, unsigned & Alignment) {
     // llvm.masked.store.*(Src0, Ptr, Mask, VLen)
     Src0 = I.getArgOperand(0);
@@ -4344,7 +4344,7 @@ void SelectionDAGBuilder::visitStoreEVL(const CallInst &I) {
 
   Value  *PtrOperand, *MaskOperand, *Src0Operand, *VLenOperand;
   unsigned Alignment = 0;
-  getEVLStoreOps(PtrOperand, MaskOperand, Src0Operand, VLenOperand, Alignment);
+  getVPStoreOps(PtrOperand, MaskOperand, Src0Operand, VLenOperand, Alignment);
 
   SDValue Ptr = getValue(PtrOperand);
   SDValue Src0 = getValue(Src0Operand);
@@ -4363,7 +4363,7 @@ void SelectionDAGBuilder::visitStoreEVL(const CallInst &I) {
     getMachineMemOperand(MachinePointerInfo(PtrOperand),
                           MachineMemOperand::MOStore,  VT.getStoreSize(),
                           Alignment, AAInfo);
-  SDValue StoreNode = DAG.getStoreEVL(getRoot(), sdl, Src0, Ptr, Mask, VLen, VT,
+  SDValue StoreNode = DAG.getStoreVP(getRoot(), sdl, Src0, Ptr, Mask, VLen, VT,
                                          MMO, false /* Truncating */);
   DAG.setRoot(StoreNode);
   setValue(&I, StoreNode);
@@ -4587,7 +4587,7 @@ void SelectionDAGBuilder::visitMaskedGather(const CallInst &I) {
   setValue(&I, Gather);
 }
 
-void SelectionDAGBuilder::visitGatherEVL(const CallInst &I) {
+void SelectionDAGBuilder::visitGatherVP(const CallInst &I) {
   SDLoc sdl = getCurSDLoc();
 
   // @llvm.evl.gather.*(Ptrs, Mask, VLen)
@@ -4635,7 +4635,7 @@ void SelectionDAGBuilder::visitGatherEVL(const CallInst &I) {
     Scale = DAG.getTargetConstant(1, sdl, TLI.getPointerTy(DAG.getDataLayout()));
   }
   SDValue Ops[] = { Root, Base, Index, Scale, Mask, VLen };
-  SDValue Gather = DAG.getGatherEVL(DAG.getVTList(VT, MVT::Other), VT, sdl, Ops, MMO);
+  SDValue Gather = DAG.getGatherVP(DAG.getVTList(VT, MVT::Other), VT, sdl, Ops, MMO);
 
   SDValue OutChain = Gather.getValue(1);
   if (!ConstantMemory)
@@ -4643,7 +4643,7 @@ void SelectionDAGBuilder::visitGatherEVL(const CallInst &I) {
   setValue(&I, Gather);
 }
 
-void SelectionDAGBuilder::visitScatterEVL(const CallInst &I) {
+void SelectionDAGBuilder::visitScatterVP(const CallInst &I) {
   SDLoc sdl = getCurSDLoc();
 
   // llvm.evl.scatter.*(Src0, Ptrs, Mask, VLen)
@@ -4677,13 +4677,13 @@ void SelectionDAGBuilder::visitScatterEVL(const CallInst &I) {
     Scale = DAG.getTargetConstant(1, sdl, TLI.getPointerTy(DAG.getDataLayout()));
   }
   SDValue Ops[] = { getRoot(), Src0, Base, Index, Scale, Mask, VLen };
-  SDValue Scatter = DAG.getScatterEVL(DAG.getVTList(MVT::Other), VT, sdl,
+  SDValue Scatter = DAG.getScatterVP(DAG.getVTList(MVT::Other), VT, sdl,
                                          Ops, MMO);
   DAG.setRoot(Scatter);
   setValue(&I, Scatter);
 }
 
-void SelectionDAGBuilder::visitLoadEVL(const CallInst &I) {
+void SelectionDAGBuilder::visitLoadVP(const CallInst &I) {
   SDLoc sdl = getCurSDLoc();
 
   auto getMaskedLoadOps = [&](Value* &Ptr, Value* &Mask, Value* &VLen,
@@ -4732,7 +4732,7 @@ void SelectionDAGBuilder::visitLoadEVL(const CallInst &I) {
                           MachineMemOperand::MOLoad,  VT.getStoreSize(),
                           Alignment, AAInfo, Ranges);
 
-  SDValue Load = DAG.getLoadEVL(VT, sdl, InChain, Ptr, Mask, VLen, VT, MMO,
+  SDValue Load = DAG.getLoadVP(VT, sdl, InChain, Ptr, Mask, VLen, VT, MMO,
                                    ISD::NON_EXTLOAD);
   if (AddToChain)
     PendingLoads.push_back(Load.getValue(1));
@@ -6288,60 +6288,60 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
     visitConstrainedFPIntrinsic(cast<ConstrainedFPIntrinsic>(I));
     return nullptr;
 
-  case Intrinsic::evl_and:
-  case Intrinsic::evl_or:
-  case Intrinsic::evl_xor:
-  case Intrinsic::evl_ashr:
-  case Intrinsic::evl_lshr:
-  case Intrinsic::evl_shl:
+  case Intrinsic::vp_and:
+  case Intrinsic::vp_or:
+  case Intrinsic::vp_xor:
+  case Intrinsic::vp_ashr:
+  case Intrinsic::vp_lshr:
+  case Intrinsic::vp_shl:
 
-  case Intrinsic::evl_select:
-  case Intrinsic::evl_compose:
-  case Intrinsic::evl_compress:
-  case Intrinsic::evl_expand:
-  case Intrinsic::evl_vshift:
+  case Intrinsic::vp_select:
+  case Intrinsic::vp_compose:
+  case Intrinsic::vp_compress:
+  case Intrinsic::vp_expand:
+  case Intrinsic::vp_vshift:
 
-  case Intrinsic::evl_load:
-  case Intrinsic::evl_store:
-  case Intrinsic::evl_gather:
-  case Intrinsic::evl_scatter:
+  case Intrinsic::vp_load:
+  case Intrinsic::vp_store:
+  case Intrinsic::vp_gather:
+  case Intrinsic::vp_scatter:
 
-  case Intrinsic::evl_fneg:
+  case Intrinsic::vp_fneg:
 
-  case Intrinsic::evl_fadd:
-  case Intrinsic::evl_fsub:
-  case Intrinsic::evl_fmul:
-  case Intrinsic::evl_fdiv:
-  case Intrinsic::evl_frem:
+  case Intrinsic::vp_fadd:
+  case Intrinsic::vp_fsub:
+  case Intrinsic::vp_fmul:
+  case Intrinsic::vp_fdiv:
+  case Intrinsic::vp_frem:
 
-  case Intrinsic::evl_fma:
+  case Intrinsic::vp_fma:
 
-  case Intrinsic::evl_add:
-  case Intrinsic::evl_sub:
-  case Intrinsic::evl_mul:
-  case Intrinsic::evl_udiv:
-  case Intrinsic::evl_sdiv:
-  case Intrinsic::evl_urem:
-  case Intrinsic::evl_srem:
+  case Intrinsic::vp_add:
+  case Intrinsic::vp_sub:
+  case Intrinsic::vp_mul:
+  case Intrinsic::vp_udiv:
+  case Intrinsic::vp_sdiv:
+  case Intrinsic::vp_urem:
+  case Intrinsic::vp_srem:
 
-  case Intrinsic::evl_cmp:
+  case Intrinsic::vp_cmp:
 
-  case Intrinsic::evl_reduce_and:
-  case Intrinsic::evl_reduce_or:
-  case Intrinsic::evl_reduce_xor:
+  case Intrinsic::vp_reduce_and:
+  case Intrinsic::vp_reduce_or:
+  case Intrinsic::vp_reduce_xor:
 
-  case Intrinsic::evl_reduce_fadd:
-  case Intrinsic::evl_reduce_fmax:
-  case Intrinsic::evl_reduce_fmin:
-  case Intrinsic::evl_reduce_fmul:
+  case Intrinsic::vp_reduce_fadd:
+  case Intrinsic::vp_reduce_fmax:
+  case Intrinsic::vp_reduce_fmin:
+  case Intrinsic::vp_reduce_fmul:
 
-  case Intrinsic::evl_reduce_add:
-  case Intrinsic::evl_reduce_mul:
-  case Intrinsic::evl_reduce_umax:
-  case Intrinsic::evl_reduce_umin:
-  case Intrinsic::evl_reduce_smax:
-  case Intrinsic::evl_reduce_smin:
-    visitExplicitVectorLengthIntrinsic(cast<EVLIntrinsic>(I));
+  case Intrinsic::vp_reduce_add:
+  case Intrinsic::vp_reduce_mul:
+  case Intrinsic::vp_reduce_umax:
+  case Intrinsic::vp_reduce_umin:
+  case Intrinsic::vp_reduce_smax:
+  case Intrinsic::vp_reduce_smin:
+    visitExplicitVectorLengthIntrinsic(cast<VPIntrinsic>(I));
     return nullptr;
 
   case Intrinsic::fmuladd: {
@@ -7163,7 +7163,7 @@ void SelectionDAGBuilder::visitConstrainedFPIntrinsic(
   setValue(&FPI, FPResult);
 }
 
-void SelectionDAGBuilder::visitCmpEVL(const EVLIntrinsic &I) {
+void SelectionDAGBuilder::visitCmpVP(const VPIntrinsic &I) {
   ISD::CondCode Condition;
   CmpInst::Predicate predicate = I.getCmpPredicate();
   bool IsFP = I.getOperand(0)->getType()->isFPOrFPVectorTy();
@@ -7186,68 +7186,68 @@ void SelectionDAGBuilder::visitCmpEVL(const EVLIntrinsic &I) {
 }
 
 void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
-    const EVLIntrinsic & EVLInst) {
+    const VPIntrinsic & VPInst) {
   SDLoc sdl = getCurSDLoc();
   unsigned Opcode;
-  switch (EVLInst.getIntrinsicID()) {
+  switch (VPInst.getIntrinsicID()) {
   default:
     llvm_unreachable("Unforeseen intrinsic");  // Can't reach here.
 
-  case Intrinsic::evl_load: visitLoadEVL(EVLInst); return;
-  case Intrinsic::evl_store: visitStoreEVL(EVLInst); return;
-  case Intrinsic::evl_gather: visitGatherEVL(EVLInst); return;
-  case Intrinsic::evl_scatter: visitScatterEVL(EVLInst); return;
+  case Intrinsic::vp_load: visitLoadVP(VPInst); return;
+  case Intrinsic::vp_store: visitStoreVP(VPInst); return;
+  case Intrinsic::vp_gather: visitGatherVP(VPInst); return;
+  case Intrinsic::vp_scatter: visitScatterVP(VPInst); return;
 
-  case Intrinsic::evl_cmp: visitCmpEVL(EVLInst); return;
+  case Intrinsic::vp_cmp: visitCmpVP(VPInst); return;
 
-  case Intrinsic::evl_add: Opcode = ISD::EVL_ADD; break;
-  case Intrinsic::evl_sub: Opcode = ISD::EVL_SUB; break;
-  case Intrinsic::evl_mul: Opcode = ISD::EVL_MUL; break;
-  case Intrinsic::evl_udiv: Opcode = ISD::EVL_UDIV; break;
-  case Intrinsic::evl_sdiv: Opcode = ISD::EVL_SDIV; break;
-  case Intrinsic::evl_urem: Opcode = ISD::EVL_UREM; break;
-  case Intrinsic::evl_srem: Opcode = ISD::EVL_SREM; break;
+  case Intrinsic::vp_add: Opcode = ISD::VP_ADD; break;
+  case Intrinsic::vp_sub: Opcode = ISD::VP_SUB; break;
+  case Intrinsic::vp_mul: Opcode = ISD::VP_MUL; break;
+  case Intrinsic::vp_udiv: Opcode = ISD::VP_UDIV; break;
+  case Intrinsic::vp_sdiv: Opcode = ISD::VP_SDIV; break;
+  case Intrinsic::vp_urem: Opcode = ISD::VP_UREM; break;
+  case Intrinsic::vp_srem: Opcode = ISD::VP_SREM; break;
 
-  case Intrinsic::evl_and: Opcode = ISD::EVL_AND; break;
-  case Intrinsic::evl_or: Opcode = ISD::EVL_OR; break;
-  case Intrinsic::evl_xor: Opcode = ISD::EVL_XOR; break;
-  case Intrinsic::evl_ashr: Opcode = ISD::EVL_SRA; break;
-  case Intrinsic::evl_lshr: Opcode = ISD::EVL_SRL; break;
-  case Intrinsic::evl_shl: Opcode = ISD::EVL_SHL; break;
+  case Intrinsic::vp_and: Opcode = ISD::VP_AND; break;
+  case Intrinsic::vp_or: Opcode = ISD::VP_OR; break;
+  case Intrinsic::vp_xor: Opcode = ISD::VP_XOR; break;
+  case Intrinsic::vp_ashr: Opcode = ISD::VP_SRA; break;
+  case Intrinsic::vp_lshr: Opcode = ISD::VP_SRL; break;
+  case Intrinsic::vp_shl: Opcode = ISD::VP_SHL; break;
 
-  case Intrinsic::evl_fneg: Opcode = ISD::EVL_FNEG; break;
-  case Intrinsic::evl_fadd: Opcode = ISD::EVL_FADD; break;
-  case Intrinsic::evl_fsub: Opcode = ISD::EVL_FSUB; break;
-  case Intrinsic::evl_fmul: Opcode = ISD::EVL_FMUL; break;
-  case Intrinsic::evl_fdiv: Opcode = ISD::EVL_FDIV; break;
-  case Intrinsic::evl_frem: Opcode = ISD::EVL_FREM; break;
+  case Intrinsic::vp_fneg: Opcode = ISD::VP_FNEG; break;
+  case Intrinsic::vp_fadd: Opcode = ISD::VP_FADD; break;
+  case Intrinsic::vp_fsub: Opcode = ISD::VP_FSUB; break;
+  case Intrinsic::vp_fmul: Opcode = ISD::VP_FMUL; break;
+  case Intrinsic::vp_fdiv: Opcode = ISD::VP_FDIV; break;
+  case Intrinsic::vp_frem: Opcode = ISD::VP_FREM; break;
 
-  case Intrinsic::evl_fma: Opcode = ISD::EVL_FMA; break;
+  case Intrinsic::vp_fma: Opcode = ISD::VP_FMA; break;
 
-  case Intrinsic::evl_select: Opcode = ISD::EVL_SELECT; break;
-  case Intrinsic::evl_compose: Opcode = ISD::EVL_COMPOSE; break;
-  case Intrinsic::evl_compress: Opcode = ISD::EVL_COMPRESS; break;
-  case Intrinsic::evl_expand: Opcode = ISD::EVL_EXPAND; break;
-  case Intrinsic::evl_vshift: Opcode = ISD::EVL_VSHIFT; break;
+  case Intrinsic::vp_select: Opcode = ISD::VP_SELECT; break;
+  case Intrinsic::vp_compose: Opcode = ISD::VP_COMPOSE; break;
+  case Intrinsic::vp_compress: Opcode = ISD::VP_COMPRESS; break;
+  case Intrinsic::vp_expand: Opcode = ISD::VP_EXPAND; break;
+  case Intrinsic::vp_vshift: Opcode = ISD::VP_VSHIFT; break;
 
-  case Intrinsic::evl_reduce_and: Opcode = ISD::EVL_REDUCE_AND; break;
-  case Intrinsic::evl_reduce_or: Opcode = ISD::EVL_REDUCE_OR; break;
-  case Intrinsic::evl_reduce_xor: Opcode = ISD::EVL_REDUCE_XOR; break;
-  case Intrinsic::evl_reduce_add: Opcode = ISD::EVL_REDUCE_ADD; break;
-  case Intrinsic::evl_reduce_mul: Opcode = ISD::EVL_REDUCE_MUL; break;
-  case Intrinsic::evl_reduce_fadd: Opcode = ISD::EVL_REDUCE_FADD; break;
-  case Intrinsic::evl_reduce_fmul: Opcode = ISD::EVL_REDUCE_FMUL; break;
-  case Intrinsic::evl_reduce_smax: Opcode = ISD::EVL_REDUCE_SMAX; break;
-  case Intrinsic::evl_reduce_smin: Opcode = ISD::EVL_REDUCE_SMIN; break;
-  case Intrinsic::evl_reduce_umax: Opcode = ISD::EVL_REDUCE_UMAX; break;
-  case Intrinsic::evl_reduce_umin: Opcode = ISD::EVL_REDUCE_UMIN; break;
+  case Intrinsic::vp_reduce_and: Opcode = ISD::VP_REDUCE_AND; break;
+  case Intrinsic::vp_reduce_or: Opcode = ISD::VP_REDUCE_OR; break;
+  case Intrinsic::vp_reduce_xor: Opcode = ISD::VP_REDUCE_XOR; break;
+  case Intrinsic::vp_reduce_add: Opcode = ISD::VP_REDUCE_ADD; break;
+  case Intrinsic::vp_reduce_mul: Opcode = ISD::VP_REDUCE_MUL; break;
+  case Intrinsic::vp_reduce_fadd: Opcode = ISD::VP_REDUCE_FADD; break;
+  case Intrinsic::vp_reduce_fmul: Opcode = ISD::VP_REDUCE_FMUL; break;
+  case Intrinsic::vp_reduce_smax: Opcode = ISD::VP_REDUCE_SMAX; break;
+  case Intrinsic::vp_reduce_smin: Opcode = ISD::VP_REDUCE_SMIN; break;
+  case Intrinsic::vp_reduce_umax: Opcode = ISD::VP_REDUCE_UMAX; break;
+  case Intrinsic::vp_reduce_umin: Opcode = ISD::VP_REDUCE_UMIN; break;
   }
 
   // TODO memory evl: SDValue Chain = getRoot();
 
   SmallVector<EVT, 4> ValueVTs;
   const TargetLowering &TLI = DAG.getTargetLoweringInfo();
-  ComputeValueVTs(TLI, DAG.getDataLayout(), EVLInst.getType(), ValueVTs);
+  ComputeValueVTs(TLI, DAG.getDataLayout(), VPInst.getType(), ValueVTs);
   SDVTList VTs = DAG.getVTList(ValueVTs);
 
   // ValueVTs.push_back(MVT::Other); // Out chain
@@ -7255,31 +7255,31 @@ void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
 
   SDValue Result;
 
-  switch (EVLInst.getNumArgOperands()) {
+  switch (VPInst.getNumArgOperands()) {
     default:
       llvm_unreachable("unexpected number of arguments to evl intrinsic");
     case 3:
     Result = DAG.getNode(Opcode, sdl, VTs,
-                         { getValue(EVLInst.getArgOperand(0)),
-                           getValue(EVLInst.getArgOperand(1)),
-                           getValue(EVLInst.getArgOperand(2)) });
+                         { getValue(VPInst.getArgOperand(0)),
+                           getValue(VPInst.getArgOperand(1)),
+                           getValue(VPInst.getArgOperand(2)) });
     break;
 
     case 4:
     Result = DAG.getNode(Opcode, sdl, VTs,
-                         { getValue(EVLInst.getArgOperand(0)),
-                           getValue(EVLInst.getArgOperand(1)),
-                           getValue(EVLInst.getArgOperand(2)),
-                           getValue(EVLInst.getArgOperand(3)) });
+                         { getValue(VPInst.getArgOperand(0)),
+                           getValue(VPInst.getArgOperand(1)),
+                           getValue(VPInst.getArgOperand(2)),
+                           getValue(VPInst.getArgOperand(3)) });
     break;
 
     case 5:
     Result = DAG.getNode(Opcode, sdl, VTs,
-                          { getValue(EVLInst.getArgOperand(0)),
-                            getValue(EVLInst.getArgOperand(1)),
-                            getValue(EVLInst.getArgOperand(2)),
-                            getValue(EVLInst.getArgOperand(3)),
-                            getValue(EVLInst.getArgOperand(4)) });
+                          { getValue(VPInst.getArgOperand(0)),
+                            getValue(VPInst.getArgOperand(1)),
+                            getValue(VPInst.getArgOperand(2)),
+                            getValue(VPInst.getArgOperand(3)),
+                            getValue(VPInst.getArgOperand(4)) });
     break;
   }
 
@@ -7287,11 +7287,11 @@ void SelectionDAGBuilder::visitExplicitVectorLengthIntrinsic(
     // this evl node has a chain
     SDValue OutChain = Result.getValue(1);
     DAG.setRoot(OutChain);
-    SDValue EVLResult = Result.getValue(0);
-    setValue(&EVLInst, EVLResult);
+    SDValue VPResult = Result.getValue(0);
+    setValue(&VPInst, VPResult);
   } else {
     // this is a pure node
-    setValue(&EVLInst, Result);
+    setValue(&VPInst, Result);
   }
 }
 

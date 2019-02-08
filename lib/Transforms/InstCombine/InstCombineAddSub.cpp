@@ -25,7 +25,7 @@
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/IR/PredicatedInst.h"
-#include "llvm/IR/EVLBuilder.h"
+#include "llvm/IR/VPBuilder.h"
 #include "llvm/IR/MatcherCast.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Value.h"

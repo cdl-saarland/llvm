@@ -8,7 +8,7 @@
 //
 // This file defines various classes for working with Predicated Instructions.
 // Predicated instructions are either regular instructions or calls to
-// Explicit Vector Length (EVL) intrinsics that have a mask and an explicit
+// Vector Predication (VP) intrinsics that have a mask and an explicit
 // vector length argument.
 //
 //===----------------------------------------------------------------------===//
@@ -50,21 +50,21 @@ public:
   void *operator new(size_t s) = delete;
 
   Value* getMask() const {
-    auto thisEVL = dyn_cast<EVLIntrinsic>(this);
-    if (!thisEVL) return nullptr;
-    return thisEVL->getMask();
+    auto thisVP = dyn_cast<VPIntrinsic>(this);
+    if (!thisVP) return nullptr;
+    return thisVP->getMask();
   }
 
   Value* getVectorLength() const {
-    auto thisEVL = dyn_cast<EVLIntrinsic>(this);
-    if (!thisEVL) return nullptr;
-    return thisEVL->getVectorLength();
+    auto thisVP = dyn_cast<VPIntrinsic>(this);
+    if (!thisVP) return nullptr;
+    return thisVP->getVectorLength();
   }
 
   unsigned getOpcode() const {
-    auto * EVLInst = dyn_cast<EVLIntrinsic>(this);
-    if (EVLInst)
-      return EVLInst->getFunctionalOpcode();
+    auto * VPInst = dyn_cast<VPIntrinsic>(this);
+    if (VPInst)
+      return VPInst->getFunctionalOpcode();
     return cast<Instruction>(this)->getOpcode();
   }
 
@@ -94,24 +94,24 @@ public:
 
   /// Return the opcode for this Instruction or ConstantExpr.
   unsigned getOpcode() const {
-    auto * EVLInst = dyn_cast<EVLIntrinsic>(this);
-    if (EVLInst)
-      return EVLInst->getFunctionalOpcode();
+    auto * VPInst = dyn_cast<VPIntrinsic>(this);
+    if (VPInst)
+      return VPInst->getFunctionalOpcode();
     if (const Instruction *I = dyn_cast<Instruction>(this))
       return I->getOpcode();
     return cast<ConstantExpr>(this)->getOpcode();
   }
 
   Value* getMask() const {
-    auto thisEVL = dyn_cast<EVLIntrinsic>(this);
-    if (!thisEVL) return nullptr;
-    return thisEVL->getMask();
+    auto thisVP = dyn_cast<VPIntrinsic>(this);
+    if (!thisVP) return nullptr;
+    return thisVP->getMask();
   }
 
   Value* getVectorLength() const {
-    auto thisEVL = dyn_cast<EVLIntrinsic>(this);
-    if (!thisEVL) return nullptr;
-    return thisEVL->getVectorLength();
+    auto thisVP = dyn_cast<VPIntrinsic>(this);
+    if (!thisVP) return nullptr;
+    return thisVP->getVectorLength();
   }
 
   void copyIRFlags(const Value * V, bool IncludeWrapFlags = true);
@@ -121,9 +121,9 @@ public:
     else return FastMathFlags();
   }
 
-  static bool classof(const Instruction * I) { return isa<EVLIntrinsic>(I) || isa<Operator>(I); }
+  static bool classof(const Instruction * I) { return isa<VPIntrinsic>(I) || isa<Operator>(I); }
   static bool classof(const ConstantExpr * CE) { return isa<Operator>(CE); }
-  static bool classof(const Value *V) { return isa<EVLIntrinsic>(V) || isa<Operator>(V); }
+  static bool classof(const Value *V) { return isa<VPIntrinsic>(V) || isa<Operator>(V); }
 };
 
 class PredicatedBinaryOperator : public PredicatedOperator {
@@ -139,8 +139,8 @@ public:
 
   static bool classof(const Instruction * I) {
     if (isa<BinaryOperator>(I)) return true;
-    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
-    return EVLInst && EVLInst->isBinaryOp();
+    auto VPInst = dyn_cast<VPIntrinsic>(I);
+    return VPInst && VPInst->isBinaryOp();
   }
   static bool classof(const ConstantExpr * CE) { return isa<BinaryOperator>(CE); }
   static bool classof(const Value *V) {
@@ -201,8 +201,8 @@ public:
 
   static bool classof(const Instruction * I) {
     if (isa<ICmpInst>(I)) return true;
-    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
-    return EVLInst && EVLInst->getFunctionalOpcode() == Instruction::ICmp;
+    auto VPInst = dyn_cast<VPIntrinsic>(I);
+    return VPInst && VPInst->getFunctionalOpcode() == Instruction::ICmp;
   }
   static bool classof(const ConstantExpr * CE) { return CE->getOpcode() == Instruction::ICmp; }
   static bool classof(const Value *V) {
@@ -217,7 +217,7 @@ public:
     if (ICInst) return ICInst->getPredicate();
     auto * CE = dyn_cast<const ConstantExpr>(this);
     if (CE) return static_cast<ICmpInst::Predicate>(CE->getPredicate());
-    return static_cast<ICmpInst::Predicate>(cast<EVLIntrinsic>(this)->getCmpPredicate());
+    return static_cast<ICmpInst::Predicate>(cast<VPIntrinsic>(this)->getCmpPredicate());
   }
 };
 
@@ -233,8 +233,8 @@ public:
 
   static bool classof(const Instruction * I) {
     if (isa<FCmpInst>(I)) return true;
-    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
-    return EVLInst && EVLInst->getFunctionalOpcode() == Instruction::FCmp;
+    auto VPInst = dyn_cast<VPIntrinsic>(I);
+    return VPInst && VPInst->getFunctionalOpcode() == Instruction::FCmp;
   }
   static bool classof(const ConstantExpr * CE) { return CE->getOpcode() == Instruction::FCmp; }
   static bool classof(const Value *V) {
@@ -248,7 +248,7 @@ public:
     if (FCInst) return FCInst->getPredicate();
     auto * CE = dyn_cast<const ConstantExpr>(this);
     if (CE) return static_cast<FCmpInst::Predicate>(CE->getPredicate());
-    return static_cast<FCmpInst::Predicate>(cast<EVLIntrinsic>(this)->getCmpPredicate());
+    return static_cast<FCmpInst::Predicate>(cast<VPIntrinsic>(this)->getCmpPredicate());
   }
 };
 
@@ -264,8 +264,8 @@ public:
 
   static bool classof(const Instruction * I) {
     if (isa<SelectInst>(I)) return true;
-    auto EVLInst = dyn_cast<EVLIntrinsic>(I);
-    return EVLInst && EVLInst->getFunctionalOpcode() == Instruction::Select;
+    auto VPInst = dyn_cast<VPIntrinsic>(I);
+    return VPInst && VPInst->getFunctionalOpcode() == Instruction::Select;
   }
   static bool classof(const ConstantExpr * CE) { return CE->getOpcode() == Instruction::Select; }
   static bool classof(const Value *V) {

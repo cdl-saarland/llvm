@@ -5024,15 +5024,15 @@ Value *llvm::SimplifyCall(CallBase *Call, const SimplifyQuery &Q) {
                         Call->arg_end(), Q, RecursionLimit);
 }
 
-Value *llvm::SimplifyEVLIntrinsic(EVLIntrinsic & EVLInst, const SimplifyQuery &Q) {
-  PredicatedContext PC(&EVLInst);
+Value *llvm::SimplifyVPIntrinsic(VPIntrinsic & VPInst, const SimplifyQuery &Q) {
+  PredicatedContext PC(&VPInst);
 
-  auto & PI = cast<PredicatedInstruction>(EVLInst);
+  auto & PI = cast<PredicatedInstruction>(VPInst);
   switch (PI.getOpcode()) {
     default:
       return nullptr;
 
-    case Instruction::FSub: return SimplifyPredicatedFSubInst(EVLInst.getOperand(0), EVLInst.getOperand(1), EVLInst.getFastMathFlags(), Q, PC);
+    case Instruction::FSub: return SimplifyPredicatedFSubInst(VPInst.getOperand(0), VPInst.getOperand(1), VPInst.getFastMathFlags(), Q, PC);
   }
 }
 
@@ -5174,9 +5174,9 @@ Value *llvm::SimplifyInstruction(Instruction *I, const SimplifyQuery &SQ,
     Result = SimplifyPHINode(cast<PHINode>(I), Q);
     break;
   case Instruction::Call: {
-    auto * EVL = dyn_cast<EVLIntrinsic>(I);
-    if (EVL) {
-      Result = SimplifyEVLIntrinsic(*EVL, Q);
+    auto * VPInst = dyn_cast<VPIntrinsic>(I);
+    if (VPInst) {
+      Result = SimplifyVPIntrinsic(*VPInst, Q);
       if (Result) break;
     }
 

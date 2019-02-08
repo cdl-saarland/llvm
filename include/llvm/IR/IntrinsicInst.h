@@ -205,31 +205,31 @@ namespace llvm {
     /// @}
   };
 
-  class EVLIntrinsic : public IntrinsicInst {
+  class VPIntrinsic : public IntrinsicInst {
   public:
-    enum class EVLTypeToken : int8_t {
+    enum class VPTypeToken : int8_t {
       Scalar = 1, // scalar operand type
       Vector = 2, // vectorized operand type
       Mask = 3    // vector mask type
     };
 
-    using TypeTokenVec = SmallVector<EVLTypeToken, 4>;
+    using TypeTokenVec = SmallVector<VPTypeToken, 4>;
     using ShortTypeVec = SmallVector<Type*, 4>;
 
     struct
-    EVLIntrinsicDesc {
+    VPIntrinsicDesc {
       Intrinsic::ID ID; // LLVM Intrinsic ID.
       TypeTokenVec typeTokens; // Type Parmeters for the LLVM Intrinsic.
       int MaskPos; // Parameter index of the Mask parameter.
-      int EVLPos; // Parameter index of the EVL parameter.
+      int EVLPos; // Parameter index of the VP parameter.
     };
 
     // Translate this generic Opcode to an EVLIntrinsic
-    static EVLIntrinsicDesc GetEVLIntrinsicDesc(unsigned OC);
+    static VPIntrinsicDesc GetVPIntrinsicDesc(unsigned OC);
 
-    // Generate the disambiguating type vec for this EVL Intrinsic
-    static EVLIntrinsic::ShortTypeVec
-    EncodeTypeTokens(EVLIntrinsic::TypeTokenVec TTVec, Type & VectorTy, Type & ScalarTy);
+    // Generate the disambiguating type vec for this VP Intrinsic
+    static VPIntrinsic::ShortTypeVec
+    EncodeTypeTokens(VPIntrinsic::TypeTokenVec TTVec, Type & VectorTy, Type & ScalarTy);
 
     bool isUnaryOp() const;
     bool isBinaryOp() const;
@@ -246,59 +246,59 @@ namespace llvm {
       default:
         return false;
 
-      case Intrinsic::evl_cmp:
+      case Intrinsic::vp_cmp:
 
-      case Intrinsic::evl_and:
-      case Intrinsic::evl_or:
-      case Intrinsic::evl_xor:
-      case Intrinsic::evl_ashr:
-      case Intrinsic::evl_lshr:
-      case Intrinsic::evl_shl:
+      case Intrinsic::vp_and:
+      case Intrinsic::vp_or:
+      case Intrinsic::vp_xor:
+      case Intrinsic::vp_ashr:
+      case Intrinsic::vp_lshr:
+      case Intrinsic::vp_shl:
 
-      case Intrinsic::evl_select:
-      case Intrinsic::evl_compose:
-      case Intrinsic::evl_compress:
-      case Intrinsic::evl_expand:
-      case Intrinsic::evl_vshift:
+      case Intrinsic::vp_select:
+      case Intrinsic::vp_compose:
+      case Intrinsic::vp_compress:
+      case Intrinsic::vp_expand:
+      case Intrinsic::vp_vshift:
 
-      case Intrinsic::evl_load:
-      case Intrinsic::evl_store:
-      case Intrinsic::evl_gather:
-      case Intrinsic::evl_scatter:
+      case Intrinsic::vp_load:
+      case Intrinsic::vp_store:
+      case Intrinsic::vp_gather:
+      case Intrinsic::vp_scatter:
 
-      case Intrinsic::evl_fneg:
+      case Intrinsic::vp_fneg:
 
-      case Intrinsic::evl_fadd:
-      case Intrinsic::evl_fsub:
-      case Intrinsic::evl_fmul:
-      case Intrinsic::evl_fdiv:
-      case Intrinsic::evl_frem:
+      case Intrinsic::vp_fadd:
+      case Intrinsic::vp_fsub:
+      case Intrinsic::vp_fmul:
+      case Intrinsic::vp_fdiv:
+      case Intrinsic::vp_frem:
 
-      case Intrinsic::evl_fma:
+      case Intrinsic::vp_fma:
 
-      case Intrinsic::evl_add:
-      case Intrinsic::evl_sub:
-      case Intrinsic::evl_mul:
-      case Intrinsic::evl_udiv:
-      case Intrinsic::evl_sdiv:
-      case Intrinsic::evl_urem:
-      case Intrinsic::evl_srem:
+      case Intrinsic::vp_add:
+      case Intrinsic::vp_sub:
+      case Intrinsic::vp_mul:
+      case Intrinsic::vp_udiv:
+      case Intrinsic::vp_sdiv:
+      case Intrinsic::vp_urem:
+      case Intrinsic::vp_srem:
 
-      case Intrinsic::evl_reduce_add:
-      case Intrinsic::evl_reduce_mul:
-      case Intrinsic::evl_reduce_umin:
-      case Intrinsic::evl_reduce_umax:
-      case Intrinsic::evl_reduce_smin:
-      case Intrinsic::evl_reduce_smax:
+      case Intrinsic::vp_reduce_add:
+      case Intrinsic::vp_reduce_mul:
+      case Intrinsic::vp_reduce_umin:
+      case Intrinsic::vp_reduce_umax:
+      case Intrinsic::vp_reduce_smin:
+      case Intrinsic::vp_reduce_smax:
 
-      case Intrinsic::evl_reduce_and:
-      case Intrinsic::evl_reduce_or:
-      case Intrinsic::evl_reduce_xor:
+      case Intrinsic::vp_reduce_and:
+      case Intrinsic::vp_reduce_or:
+      case Intrinsic::vp_reduce_xor:
 
-      case Intrinsic::evl_reduce_fadd:
-      case Intrinsic::evl_reduce_fmul:
-      case Intrinsic::evl_reduce_fmin:
-      case Intrinsic::evl_reduce_fmax:
+      case Intrinsic::vp_reduce_fadd:
+      case Intrinsic::vp_reduce_fmul:
+      case Intrinsic::vp_reduce_fmin:
+      case Intrinsic::vp_reduce_fmax:
         return true;
       }
     }
@@ -311,40 +311,40 @@ namespace llvm {
       switch (getIntrinsicID()) {
         default: return Instruction::Call;
 
-      case Intrinsic::evl_cmp:
+      case Intrinsic::vp_cmp:
         if (getArgOperand(0)->getType()->isFloatingPointTy()) {
           return Instruction::FCmp;
         } else {
           return Instruction::ICmp;
         }
 
-      case Intrinsic::evl_and:  return Instruction::And;
-      case Intrinsic::evl_or:   return Instruction::Or;
-      case Intrinsic::evl_xor:  return Instruction::Xor;
-      case Intrinsic::evl_ashr: return Instruction::AShr;
-      case Intrinsic::evl_lshr: return Instruction::LShr;
-      case Intrinsic::evl_shl:  return Instruction::Shl;
+      case Intrinsic::vp_and:  return Instruction::And;
+      case Intrinsic::vp_or:   return Instruction::Or;
+      case Intrinsic::vp_xor:  return Instruction::Xor;
+      case Intrinsic::vp_ashr: return Instruction::AShr;
+      case Intrinsic::vp_lshr: return Instruction::LShr;
+      case Intrinsic::vp_shl:  return Instruction::Shl;
 
-      case Intrinsic::evl_select: return Instruction::Select;
+      case Intrinsic::vp_select: return Instruction::Select;
 
-      case Intrinsic::evl_load:   return Instruction::Load;
-      case Intrinsic::evl_store:  return Instruction::Store;
+      case Intrinsic::vp_load:   return Instruction::Load;
+      case Intrinsic::vp_store:  return Instruction::Store;
 
-      case Intrinsic::evl_fneg:   return Instruction::FNeg;
+      case Intrinsic::vp_fneg:   return Instruction::FNeg;
 
-      case Intrinsic::evl_fadd:   return Instruction::FAdd;
-      case Intrinsic::evl_fsub:   return Instruction::FSub;
-      case Intrinsic::evl_fmul:   return Instruction::FMul;
-      case Intrinsic::evl_fdiv:   return Instruction::FDiv;
-      case Intrinsic::evl_frem:   return Instruction::FRem;
+      case Intrinsic::vp_fadd:   return Instruction::FAdd;
+      case Intrinsic::vp_fsub:   return Instruction::FSub;
+      case Intrinsic::vp_fmul:   return Instruction::FMul;
+      case Intrinsic::vp_fdiv:   return Instruction::FDiv;
+      case Intrinsic::vp_frem:   return Instruction::FRem;
 
-      case Intrinsic::evl_add:    return Instruction::Add;
-      case Intrinsic::evl_sub:    return Instruction::Sub;
-      case Intrinsic::evl_mul:    return Instruction::Mul;
-      case Intrinsic::evl_udiv:   return Instruction::UDiv;
-      case Intrinsic::evl_sdiv:   return Instruction::SDiv;
-      case Intrinsic::evl_urem:   return Instruction::URem;
-      case Intrinsic::evl_srem:   return Instruction::SRem;
+      case Intrinsic::vp_add:    return Instruction::Add;
+      case Intrinsic::vp_sub:    return Instruction::Sub;
+      case Intrinsic::vp_mul:    return Instruction::Mul;
+      case Intrinsic::vp_udiv:   return Instruction::UDiv;
+      case Intrinsic::vp_sdiv:   return Instruction::SDiv;
+      case Intrinsic::vp_urem:   return Instruction::URem;
+      case Intrinsic::vp_srem:   return Instruction::SRem;
       }
     }
   };

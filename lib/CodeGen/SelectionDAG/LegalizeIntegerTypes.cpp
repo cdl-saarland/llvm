@@ -1073,8 +1073,8 @@ bool DAGTypeLegalizer::PromoteIntegerOperand(SDNode *N, unsigned OpNo) {
     return false;
   }
 
-  if (N->isEVL()) {
-    Res = PromoteIntOp_EVL(N, OpNo);
+  if (N->isVP()) {
+    Res = PromoteIntOp_VP(N, OpNo);
   } else {
   switch (N->getOpcode()) {
     default:
@@ -1424,16 +1424,16 @@ SDValue DAGTypeLegalizer::PromoteIntOp_MSTORE(MaskedStoreSDNode *N,
                             TruncateStore, N->isCompressingStore());
 }
 
-SDValue DAGTypeLegalizer::PromoteIntOp_EVL(SDNode *N, unsigned OpNo) {
+SDValue DAGTypeLegalizer::PromoteIntOp_VP(SDNode *N, unsigned OpNo) {
   EVT DataVT;
   switch (N->getOpcode()) {
     default:
       DataVT = N->getValueType(0);
     break;
 
-    case ISD::EVL_STORE:
-    case ISD::EVL_SCATTER:
-      llvm_unreachable("TODO implement EVL memory nodes");
+    case ISD::VP_STORE:
+    case ISD::VP_SCATTER:
+      llvm_unreachable("TODO implement VP memory nodes");
   }
 
   // TODO assert that \p OpNo is the mask

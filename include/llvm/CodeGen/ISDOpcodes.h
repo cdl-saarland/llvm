@@ -198,7 +198,7 @@ namespace ISD {
 
     /// Simple integer binary arithmetic operators.
     ADD, SUB, MUL, SDIV, UDIV, SREM, UREM,
-    EVL_ADD, EVL_SUB, EVL_MUL, EVL_SDIV, EVL_UDIV, EVL_SREM, EVL_UREM,
+    VP_ADD, VP_SUB, VP_MUL, VP_SDIV, VP_UDIV, VP_SREM, VP_UREM,
 
     /// SMUL_LOHI/UMUL_LOHI - Multiply two integers of type iN, producing
     /// a signed/unsigned value of type i[2*N], and return the full value as
@@ -281,7 +281,7 @@ namespace ISD {
 
     /// Simple binary floating point operators.
     FADD, FSUB, FMUL, FDIV, FREM,
-    EVL_FADD, EVL_FSUB, EVL_FMUL, EVL_FDIV, EVL_FREM,
+    VP_FADD, VP_FSUB, VP_FMUL, VP_FDIV, VP_FREM,
 
     /// Constrained versions of the binary floating point operators.
     /// These will be lowered to the simple operators before final selection.
@@ -301,7 +301,7 @@ namespace ISD {
 
     /// FMA - Perform a * b + c with no intermediate rounding step.
     FMA,
-    EVL_FMA,
+    VP_FMA,
 
     /// FMAD - Perform a * b + c, while getting the same result as the
     /// separately rounded operations.
@@ -368,18 +368,18 @@ namespace ISD {
     /// in terms of the element size of VEC1/VEC2, not in terms of bytes.
     VECTOR_SHUFFLE,
 
-    /// EVL_VSHIFT(VEC1, AMOUNT, MASK, VLEN) - Returns a vector, of the same type as
+    /// VP_VSHIFT(VEC1, AMOUNT, MASK, VLEN) - Returns a vector, of the same type as
     /// VEC1. AMOUNT is an integer value. The returned vector is equivalent
     /// to VEC1 shifted by AMOUNT (RETURNED_VEC[idx] = VEC1[idx + AMOUNT]).
-    EVL_VSHIFT,
+    VP_VSHIFT,
 
-    /// EVL_COMPRESS(VEC1, MASK, VLEN) - Returns a vector, of the same type as
+    /// VP_COMPRESS(VEC1, MASK, VLEN) - Returns a vector, of the same type as
     /// VEC1.
-    EVL_COMPRESS,
+    VP_COMPRESS,
 
-    /// EVL_EXPAND(VEC1, MASK, VLEN) - Returns a vector, of the same type as
+    /// VP_EXPAND(VEC1, MASK, VLEN) - Returns a vector, of the same type as
     /// VEC1.
-    EVL_EXPAND,
+    VP_EXPAND,
 
     /// SCALAR_TO_VECTOR(VAL) - This represents the operation of loading a
     /// scalar value into element 0 of the resultant vector type.  The top
@@ -400,7 +400,7 @@ namespace ISD {
 
     /// Bitwise operators - logical and, logical or, logical xor.
     AND, OR, XOR,
-    EVL_AND, EVL_OR, EVL_XOR,
+    VP_AND, VP_OR, VP_XOR,
 
     /// ABS - Determine the unsigned absolute value of a signed integer value of
     /// the same bitwidth.
@@ -424,7 +424,7 @@ namespace ISD {
     /// fshl(X,Y,Z): (X << (Z % BW)) | (Y >> (BW - (Z % BW)))
     /// fshr(X,Y,Z): (X << (BW - (Z % BW))) | (Y >> (Z % BW))
     SHL, SRA, SRL, ROTL, ROTR, FSHL, FSHR,
-    EVL_SHL, EVL_SRA, EVL_SRL,
+    VP_SHL, VP_SRA, VP_SRL,
 
     /// Byte Swap and Counting operators.
     BSWAP, CTTZ, CTLZ, CTPOP, BITREVERSE,
@@ -444,14 +444,14 @@ namespace ISD {
     /// change the condition type in order to match the VSELECT node using a
     /// pattern. The condition follows the BooleanContent format of the target.
     VSELECT,
-    EVL_SELECT,
+    VP_SELECT,
 
     /// Select with an integer pivot (op #0) and two vector operands (ops #1
     /// and #2), returning a vector result.  All vectors have the same length.
     /// Similar to the vector select, a comparison of the results element index
     /// with the integer pivot selects hether the corresponding result element
     /// is taken from op #1 or op #2.
-    EVL_COMPOSE,
+    VP_COMPOSE,
 
     /// Select with condition operator - This selects between a true value and
     /// a false value (ops #2 and #3) based on the boolean result of comparing
@@ -466,7 +466,7 @@ namespace ISD {
     /// them with (op #2) as a CondCodeSDNode. If the operands are vector types
     /// then the result type must also be a vector type.
     SETCC,
-    EVL_SETCC,
+    VP_SETCC,
 
     /// Like SetCC, ops #0 and #1 are the LHS and RHS operands to compare, but
     /// op #2 is a boolean indicating if there is an incoming carry. This
@@ -613,7 +613,7 @@ namespace ISD {
     FLOG, FLOG2, FLOG10, FEXP, FEXP2,
     FCEIL, FTRUNC, FRINT, FNEARBYINT, FROUND, FFLOOR,
 
-    EVL_FNEG,
+    VP_FNEG,
     /// FMINNUM/FMAXNUM - Perform floating-point minimum or maximum on two
     /// values.
     //
@@ -862,7 +862,7 @@ namespace ISD {
     // Val, OutChain = MLOAD(BasePtr, Mask, PassThru)
     // OutChain = MSTORE(Value, BasePtr, Mask)
     MLOAD, MSTORE,
-    EVL_LOAD, EVL_STORE,
+    VP_LOAD, VP_STORE,
 
     // Masked gather and scatter - load and store operations for a vector of
     // random addresses with additional mask operand that prevents memory
@@ -874,7 +874,7 @@ namespace ISD {
     // The Index operand can have more vector elements than the other operands
     // due to type legalization. The extra elements are ignored.
     MGATHER, MSCATTER,
-    EVL_GATHER, EVL_SCATTER,
+    VP_GATHER, VP_SCATTER,
 
     /// This corresponds to the llvm.lifetime.* intrinsics. The first operand
     /// is the chain and the second operand is the alloca pointer.
@@ -912,13 +912,13 @@ namespace ISD {
     VECREDUCE_AND, VECREDUCE_OR, VECREDUCE_XOR,
     VECREDUCE_SMAX, VECREDUCE_SMIN, VECREDUCE_UMAX, VECREDUCE_UMIN,
 
-    EVL_REDUCE_FADD, EVL_REDUCE_FMUL,
-    EVL_REDUCE_ADD, EVL_REDUCE_MUL,
-    EVL_REDUCE_AND, EVL_REDUCE_OR, EVL_REDUCE_XOR,
-    EVL_REDUCE_SMAX, EVL_REDUCE_SMIN, EVL_REDUCE_UMAX, EVL_REDUCE_UMIN,
+    VP_REDUCE_FADD, VP_REDUCE_FMUL,
+    VP_REDUCE_ADD, VP_REDUCE_MUL,
+    VP_REDUCE_AND, VP_REDUCE_OR, VP_REDUCE_XOR,
+    VP_REDUCE_SMAX, VP_REDUCE_SMIN, VP_REDUCE_UMAX, VP_REDUCE_UMIN,
 
     /// FMIN/FMAX nodes can have flags, for NaN/NoNaN variants.
-    EVL_REDUCE_FMAX, EVL_REDUCE_FMIN,
+    VP_REDUCE_FMAX, VP_REDUCE_FMIN,
 
     /// BUILTIN_OP_END - This must be the last enum value in this list.
     /// The target-specific pre-isel opcode values start here.
@@ -1079,18 +1079,18 @@ namespace ISD {
   /// SETCC_INVALID if it is not possible to represent the resultant comparison.
   CondCode getSetCCAndOperation(CondCode Op1, CondCode Op2, bool isInteger);
 
-  /// Return the mask operand of this EVL SDNode.
+  /// Return the mask operand of this VP SDNode.
   /// Otw, return -1.
-  int GetMaskPosEVL(unsigned OpCode);
+  int GetMaskPosVP(unsigned OpCode);
 
-  /// Return the vector length operand of this EVL SDNode.
+  /// Return the vector length operand of this VP SDNode.
   /// Otw, return -1.
-  int GetVectorLengthPosEVL(unsigned OpCode);
+  int GetVectorLengthPosVP(unsigned OpCode);
 
-  /// Translate this EVL OpCode to a native instruction OpCode.
-  unsigned GetFunctionOpCodeForEVL(unsigned EVLOpCode);
+  /// Translate this VP OpCode to a native instruction OpCode.
+  unsigned GetFunctionOpCodeForVP(unsigned VPOpCode);
 
-  unsigned GetEVLForFunctionOpCode(unsigned OpCode);
+  unsigned GetVPForFunctionOpCode(unsigned OpCode);
 
 } // end llvm::ISD namespace
 

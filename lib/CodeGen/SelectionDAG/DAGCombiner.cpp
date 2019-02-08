@@ -421,7 +421,7 @@ namespace {
     SDValue visitBITCAST(SDNode *N);
     SDValue visitBUILD_PAIR(SDNode *N);
     SDValue visitFADD(SDNode *N);
-    SDValue visitFADD_EVL(SDNode *N);
+    SDValue visitFADD_VP(SDNode *N);
     SDValue visitFSUB(SDNode *N);
     SDValue visitFMUL(SDNode *N);
     SDValue visitFMA(SDNode *N);
@@ -728,7 +728,6 @@ public:
   void NodeInserted(SDNode *N) override { DC.ConsiderForPruning(N); }
 };
 
-// TODO port this to EVL nodes
 struct EmptyMatchContext {
   SelectionDAG & DAG;
 
@@ -772,25 +771,25 @@ struct EmptyMatchContext {
 };
 
 struct
-EVLMatchContext {
+VPMatchContext {
   SelectionDAG & DAG;
   SDNode * Root;
   SDValue RootMaskOp;
   SDValue RootVectorLenOp;
 
-  EVLMatchContext(SelectionDAG & DAG, SDNode * Root)
+  VPMatchContext(SelectionDAG & DAG, SDNode * Root)
   : DAG(DAG)
   , Root(Root)
   , RootMaskOp()
   , RootVectorLenOp()
   {
-    if (Root->isEVL()) {
-      int RootMaskPos = ISD::GetMaskPosEVL(Root->getOpcode());
+    if (Root->isVP()) {
+      int RootMaskPos = ISD::GetMaskPosVP(Root->getOpcode());
       if (RootMaskPos != -1) {
         RootMaskOp = Root->getOperand(RootMaskPos);
       }
 
-      int RootVLenPos = ISD::GetVectorLengthPosEVL(Root->getOpcode());
+      int RootVLenPos = ISD::GetVectorLengthPosVP(Root->getOpcode());
       if (RootVLenPos != -1) {
         RootVectorLenOp = Root->getOperand(RootVLenPos);
       }
@@ -798,22 +797,22 @@ EVLMatchContext {
   }
 
   unsigned getFunctionOpCode(SDValue N) const {
-    unsigned EVLOpCode = N->getOpcode();
-    return ISD::GetFunctionOpCodeForEVL(EVLOpCode);
+    unsigned VPOpCode = N->getOpcode();
+    return ISD::GetFunctionOpCodeForVP(VPOpCode);
   }
 
   bool isCompatible(SDValue OpVal) const {
-    if (!OpVal->isEVL()) {
-      return !Root->isEVL();
+    if (!OpVal->isVP()) {
+      return !Root->isVP();
 
     } else {
-      unsigned EVLOpCode = OpVal->getOpcode();
-      int MaskPos = ISD::GetMaskPosEVL(EVLOpCode);
+      unsigned VPOpCode = OpVal->getOpcode();
+      int MaskPos = ISD::GetMaskPosVP(VPOpCode);
       if (MaskPos != -1 && RootMaskOp != OpVal.getOperand(MaskPos)) {
         return false;
       }
 
-      int VLenPos = ISD::GetVectorLengthPosEVL(EVLOpCode);
+      int VLenPos = ISD::GetVectorLengthPosVP(VPOpCode);
       if (VLenPos != -1 && RootVectorLenOp != OpVal.getOperand(VLenPos)) {
         return false;
       }
@@ -828,35 +827,35 @@ EVLMatchContext {
   }
 
   // Specialize based on number of operands.
-  // TODO emit EVL intrinsics where MaskOp/VectorLenOp != null
+  // TODO emit VP intrinsics where MaskOp/VectorLenOp != null
   // SDValue getNode(unsigned Opcode, const SDLoc &DL, EVT VT) { return DAG.getNode(Opcode, DL, VT); }
   SDValue getNode(unsigned Opcode, const SDLoc &DL, EVT VT, SDValue Operand,
                   const SDNodeFlags Flags = SDNodeFlags()) {
-    unsigned EVLOpcode = ISD::GetEVLForFunctionOpCode(Opcode);
-    int MaskPos = ISD::GetMaskPosEVL(EVLOpcode);
-    int VLenPos = ISD::GetVectorLengthPosEVL(EVLOpcode);
+    unsigned VPOpcode = ISD::GetVPForFunctionOpCode(Opcode);
+    int MaskPos = ISD::GetMaskPosVP(VPOpcode);
+    int VLenPos = ISD::GetVectorLengthPosVP(VPOpcode);
     assert(MaskPos == 1 && VLenPos == 2);
 
-    return DAG.getNode(EVLOpcode, DL, VT, {Operand, RootMaskOp, RootVectorLenOp}, Flags);
+    return DAG.getNode(VPOpcode, DL, VT, {Operand, RootMaskOp, RootVectorLenOp}, Flags);
   }
   SDValue getNode(unsigned Opcode, const SDLoc &DL, EVT VT, SDValue N1,
                   SDValue N2, const SDNodeFlags Flags = SDNodeFlags()) {
-    unsigned EVLOpcode = ISD::GetEVLForFunctionOpCode(Opcode);
-    int MaskPos = ISD::GetMaskPosEVL(EVLOpcode);
-    int VLenPos = ISD::GetVectorLengthPosEVL(EVLOpcode);
+    unsigned VPOpcode = ISD::GetVPForFunctionOpCode(Opcode);
+    int MaskPos = ISD::GetMaskPosVP(VPOpcode);
+    int VLenPos = ISD::GetVectorLengthPosVP(VPOpcode);
     assert(MaskPos == 2 && VLenPos == 3);
 
-    return DAG.getNode(EVLOpcode, DL, VT, {N1, N2, RootMaskOp, RootVectorLenOp}, Flags);
+    return DAG.getNode(VPOpcode, DL, VT, {N1, N2, RootMaskOp, RootVectorLenOp}, Flags);
   }
   SDValue getNode(unsigned Opcode, const SDLoc &DL, EVT VT, SDValue N1,
                   SDValue N2, SDValue N3,
                   const SDNodeFlags Flags = SDNodeFlags()) {
-    unsigned EVLOpcode = ISD::GetEVLForFunctionOpCode(Opcode);
-    int MaskPos = ISD::GetMaskPosEVL(EVLOpcode);
-    int VLenPos = ISD::GetVectorLengthPosEVL(EVLOpcode);
+    unsigned VPOpcode = ISD::GetVPForFunctionOpCode(Opcode);
+    int MaskPos = ISD::GetMaskPosVP(VPOpcode);
+    int VLenPos = ISD::GetVectorLengthPosVP(VPOpcode);
     assert(MaskPos == 3 && VLenPos == 4);
 
-    return DAG.getNode(EVLOpcode, DL, VT, {N1, N2, N3, RootMaskOp, RootVectorLenOp}, Flags);
+    return DAG.getNode(VPOpcode, DL, VT, {N1, N2, N3, RootMaskOp, RootVectorLenOp}, Flags);
   }
 };
 
@@ -1771,7 +1770,7 @@ SDValue DAGCombiner::visit(SDNode *N) {
   case ISD::BITCAST:            return visitBITCAST(N);
   case ISD::BUILD_PAIR:         return visitBUILD_PAIR(N);
   case ISD::FADD:               return visitFADD(N);
-  case ISD::EVL_FADD:           return visitFADD_EVL(N);
+  case ISD::VP_FADD:           return visitFADD_VP(N);
   case ISD::FSUB:               return visitFSUB(N);
   case ISD::FMUL:               return visitFMUL(N);
   case ISD::FMA:                return visitFMA(N);
@@ -11547,9 +11546,9 @@ SDValue DAGCombiner::visitFMULForFMADistributiveCombine(SDNode *N) {
   return SDValue();
 }
 
-SDValue DAGCombiner::visitFADD_EVL(SDNode *N) {
+SDValue DAGCombiner::visitFADD_VP(SDNode *N) {
   // FADD -> FMA combines:
-  if (SDValue Fused = visitFADDForFMACombine<EVLMatchContext>(N)) {
+  if (SDValue Fused = visitFADDForFMACombine<VPMatchContext>(N)) {
     AddToWorklist(Fused.getNode());
     return Fused;
   }

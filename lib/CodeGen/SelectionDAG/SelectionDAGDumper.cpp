@@ -425,63 +425,63 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::VECREDUCE_FMIN:             return "vecreduce_fmin";
 
   // Explicit Vector Length erxtension
-  // EVL Memory
-  case ISD::EVL_LOAD:                   return "evl_load";
-  case ISD::EVL_STORE:                  return "evl_store";
-  case ISD::EVL_GATHER:                 return "evl_gather";
-  case ISD::EVL_SCATTER:                return "evl_scatter";
+  // VP Memory
+  case ISD::VP_LOAD:                   return "vp_load";
+  case ISD::VP_STORE:                  return "vp_store";
+  case ISD::VP_GATHER:                 return "vp_gather";
+  case ISD::VP_SCATTER:                return "vp_scatter";
 
-  // EVL Unary operators
-  case ISD::EVL_FNEG:                   return "evl_fneg";
+  // VP Unary operators
+  case ISD::VP_FNEG:                   return "vp_fneg";
 
-  // EVL Binary operators
-  case ISD::EVL_ADD:                    return "evl_add";
-  case ISD::EVL_SUB:                    return "evl_sub";
-  case ISD::EVL_MUL:                    return "evl_mul";
-  case ISD::EVL_SDIV:                   return "evl_sdiv";
-  case ISD::EVL_UDIV:                   return "evl_udiv";
-  case ISD::EVL_SREM:                   return "evl_srem";
-  case ISD::EVL_UREM:                   return "evl_urem";
-  case ISD::EVL_AND:                    return "evl_and";
-  case ISD::EVL_OR:                     return "evl_or";
-  case ISD::EVL_XOR:                    return "evl_xor";
-  case ISD::EVL_SHL:                    return "evl_shl";
-  case ISD::EVL_SRA:                    return "evl_sra";
-  case ISD::EVL_SRL:                    return "evl_srl";
-  case ISD::EVL_FADD:                   return "evl_fadd";
-  case ISD::EVL_FSUB:                   return "evl_fsub";
-  case ISD::EVL_FMUL:                   return "evl_fmul";
-  case ISD::EVL_FDIV:                   return "evl_fdiv";
-  case ISD::EVL_FREM:                   return "evl_frem";
+  // VP Binary operators
+  case ISD::VP_ADD:                    return "vp_add";
+  case ISD::VP_SUB:                    return "vp_sub";
+  case ISD::VP_MUL:                    return "vp_mul";
+  case ISD::VP_SDIV:                   return "vp_sdiv";
+  case ISD::VP_UDIV:                   return "vp_udiv";
+  case ISD::VP_SREM:                   return "vp_srem";
+  case ISD::VP_UREM:                   return "vp_urem";
+  case ISD::VP_AND:                    return "vp_and";
+  case ISD::VP_OR:                     return "vp_or";
+  case ISD::VP_XOR:                    return "vp_xor";
+  case ISD::VP_SHL:                    return "vp_shl";
+  case ISD::VP_SRA:                    return "vp_sra";
+  case ISD::VP_SRL:                    return "vp_srl";
+  case ISD::VP_FADD:                   return "vp_fadd";
+  case ISD::VP_FSUB:                   return "vp_fsub";
+  case ISD::VP_FMUL:                   return "vp_fmul";
+  case ISD::VP_FDIV:                   return "vp_fdiv";
+  case ISD::VP_FREM:                   return "vp_frem";
 
-  // EVL comparison
-  case ISD::EVL_SETCC:                  return "evl_setcc";
+  // VP comparison
+  case ISD::VP_SETCC:                  return "vp_setcc";
 
-  // EVL ternary operators
-  case ISD::EVL_FMA:                    return "evl_fma";
+  // VP ternary operators
+  case ISD::VP_FMA:                    return "vp_fma";
 
-  // EVL shuffle
-  case ISD::EVL_VSHIFT:                 return "evl_vshift";
-  case ISD::EVL_COMPRESS:               return "evl_compress";
-  case ISD::EVL_EXPAND:                 return "evl_expand";
+  // VP shuffle
+  case ISD::VP_VSHIFT:                 return "vp_vshift";
+  case ISD::VP_COMPRESS:               return "vp_compress";
+  case ISD::VP_EXPAND:                 return "vp_expand";
 
-  case ISD::EVL_COMPOSE:                return "evl_compose";
-  case ISD::EVL_SELECT:                 return "evl_select";
+  case ISD::VP_COMPOSE:                return "vp_compose";
+  case ISD::VP_SELECT:                 return "vp_select";
 
-  // EVL reduction operators
-  case ISD::EVL_REDUCE_FADD:            return "evl_reduce_fadd";
-  case ISD::EVL_REDUCE_FMUL:            return "evl_reduce_fmul";
-  case ISD::EVL_REDUCE_ADD:             return "evl_reduce_add";
-  case ISD::EVL_REDUCE_MUL:             return "evl_reduce_mul";
-  case ISD::EVL_REDUCE_AND:             return "evl_reduce_and";
-  case ISD::EVL_REDUCE_OR:              return "evl_reduce_or";
-  case ISD::EVL_REDUCE_XOR:             return "evl_reduce_xor";
-  case ISD::EVL_REDUCE_SMAX:            return "evl_reduce_smax";
-  case ISD::EVL_REDUCE_SMIN:            return "evl_reduce_smin";
-  case ISD::EVL_REDUCE_UMAX:            return "evl_reduce_umax";
-  case ISD::EVL_REDUCE_UMIN:            return "evl_reduce_umin";
-  case ISD::EVL_REDUCE_FMAX:            return "evl_reduce_fmax";
-  case ISD::EVL_REDUCE_FMIN:            return "evl_reduce_fmin";
+  // VP reduction operators
+  case ISD::VP_REDUCE_FADD:            return "vp_reduce_fadd";
+  case ISD::VP_REDUCE_FMUL:            return "vp_reduce_fmul";
+  case ISD::VP_REDUCE_ADD:             return "vp_reduce_add";
+  case ISD::VP_REDUCE_MUL:             return "vp_reduce_mul";
+  case ISD::VP_REDUCE_AND:             return "vp_reduce_and";
+  case ISD::VP_REDUCE_OR:              return "vp_reduce_or";
+  case ISD::VP_REDUCE_XOR:             return "vp_reduce_xor";
+  case ISD::VP_REDUCE_SMAX:            return "vp_reduce_smax";
+  case ISD::VP_REDUCE_SMIN:            return "vp_reduce_smin";
+  case ISD::VP_REDUCE_UMAX:            return "vp_reduce_umax";
+  case ISD::VP_REDUCE_UMIN:            return "vp_reduce_umin";
+  case ISD::VP_REDUCE_FMAX:            return "vp_reduce_fmax";
+  case ISD::VP_REDUCE_FMIN:            return "vp_reduce_fmin";
   }
 }
 

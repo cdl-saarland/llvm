@@ -429,178 +429,176 @@ ISD::CondCode ISD::getSetCCAndOperation(ISD::CondCode Op1, ISD::CondCode Op2,
 }
 
 //===----------------------------------------------------------------------===//
-//                           SDNode EVL Support
+//                           SDNode VP Support
 //===----------------------------------------------------------------------===//
 
 int
-ISD::GetMaskPosEVL(unsigned OpCode) {
+ISD::GetMaskPosVP(unsigned OpCode) {
   switch (OpCode) {
     default: return -1;
 
-    case ISD::EVL_FNEG:
+    case ISD::VP_FNEG:
       return 1;
 
-    case ISD::EVL_ADD:
-    case ISD::EVL_SUB:
-    case ISD::EVL_MUL:
-    case ISD::EVL_SDIV:
-    case ISD::EVL_SREM:
-    case ISD::EVL_UDIV:
-    case ISD::EVL_UREM:
+    case ISD::VP_ADD:
+    case ISD::VP_SUB:
+    case ISD::VP_MUL:
+    case ISD::VP_SDIV:
+    case ISD::VP_SREM:
+    case ISD::VP_UDIV:
+    case ISD::VP_UREM:
 
-    case ISD::EVL_AND:
-    case ISD::EVL_OR:
-    case ISD::EVL_XOR:
-    case ISD::EVL_SHL:
-    case ISD::EVL_SRA:
-    case ISD::EVL_SRL:
-    case ISD::EVL_FDIV:
-    case ISD::EVL_FREM:
+    case ISD::VP_AND:
+    case ISD::VP_OR:
+    case ISD::VP_XOR:
+    case ISD::VP_SHL:
+    case ISD::VP_SRA:
+    case ISD::VP_SRL:
+    case ISD::VP_FDIV:
+    case ISD::VP_FREM:
 
-    case ISD::EVL_FADD:
-    case ISD::EVL_FMUL:
+    case ISD::VP_FADD:
+    case ISD::VP_FMUL:
       return 2;
 
-    case ISD::EVL_FMA:
-    case ISD::EVL_SELECT:
+    case ISD::VP_FMA:
+    case ISD::VP_SELECT:
       return 3;
 
-    case EVL_REDUCE_FADD:
-    case EVL_REDUCE_FMUL:
-    case EVL_REDUCE_ADD:
-    case EVL_REDUCE_MUL:
-    case EVL_REDUCE_AND:
-    case EVL_REDUCE_OR:
-    case EVL_REDUCE_XOR:
-    case EVL_REDUCE_SMAX:
-    case EVL_REDUCE_SMIN:
-    case EVL_REDUCE_UMAX:
-    case EVL_REDUCE_UMIN:
-    case VECREDUCE_FMAX:
-    case VECREDUCE_FMIN:
-    case EVL_REDUCE_FMAX:
-    case EVL_REDUCE_FMIN:
+    case VP_REDUCE_FADD:
+    case VP_REDUCE_FMUL:
+    case VP_REDUCE_ADD:
+    case VP_REDUCE_MUL:
+    case VP_REDUCE_AND:
+    case VP_REDUCE_OR:
+    case VP_REDUCE_XOR:
+    case VP_REDUCE_SMAX:
+    case VP_REDUCE_SMIN:
+    case VP_REDUCE_UMAX:
+    case VP_REDUCE_UMIN:
+    case VP_REDUCE_FMAX:
+    case VP_REDUCE_FMIN:
       return 1;
 
     /// FMIN/FMAX nodes can have flags, for NaN/NoNaN variants.
-    // (implicit) case ISD::EVL_COMPOSE: return -1
+    // (implicit) case ISD::VP_COMPOSE: return -1
   }
 }
 
 int
-ISD::GetVectorLengthPosEVL(unsigned OpCode) {
+ISD::GetVectorLengthPosVP(unsigned OpCode) {
   switch (OpCode) {
     default: return -1;
 
-    case ISD::EVL_SELECT:
+    case VP_SELECT:
       return 0;
 
-    case ISD::EVL_FNEG:
+    case VP_FNEG:
       return 2;
 
-    case ISD::EVL_ADD:
-    case ISD::EVL_SUB:
-    case ISD::EVL_MUL:
-    case ISD::EVL_SDIV:
-    case ISD::EVL_SREM:
-    case ISD::EVL_UDIV:
-    case ISD::EVL_UREM:
+    case VP_ADD:
+    case VP_SUB:
+    case VP_MUL:
+    case VP_SDIV:
+    case VP_SREM:
+    case VP_UDIV:
+    case VP_UREM:
 
-    case ISD::EVL_AND:
-    case ISD::EVL_OR:
-    case ISD::EVL_XOR:
-    case ISD::EVL_SHL:
-    case ISD::EVL_SRA:
-    case ISD::EVL_SRL:
+    case VP_AND:
+    case VP_OR:
+    case VP_XOR:
+    case VP_SHL:
+    case VP_SRA:
+    case VP_SRL:
 
-    case ISD::EVL_FADD:
-    case ISD::EVL_FMUL:
-    case ISD::EVL_FDIV:
-    case ISD::EVL_FREM:
+    case VP_FADD:
+    case VP_FMUL:
+    case VP_FDIV:
+    case VP_FREM:
       return 3;
 
-    case ISD::EVL_FMA:
+    case VP_FMA:
       return 4;
 
-    case ISD::EVL_COMPOSE:
+    case VP_COMPOSE:
       return 3;
 
-    case EVL_REDUCE_FADD:
-    case EVL_REDUCE_FMUL:
-    case EVL_REDUCE_ADD:
-    case EVL_REDUCE_MUL:
-    case EVL_REDUCE_AND:
-    case EVL_REDUCE_OR:
-    case EVL_REDUCE_XOR:
-    case EVL_REDUCE_SMAX:
-    case EVL_REDUCE_SMIN:
-    case EVL_REDUCE_UMAX:
-    case EVL_REDUCE_UMIN:
-    case EVL_REDUCE_FMAX:
-    case EVL_REDUCE_FMIN:
+    case VP_REDUCE_FADD:
+    case VP_REDUCE_FMUL:
+    case VP_REDUCE_ADD:
+    case VP_REDUCE_MUL:
+    case VP_REDUCE_AND:
+    case VP_REDUCE_OR:
+    case VP_REDUCE_XOR:
+    case VP_REDUCE_SMAX:
+    case VP_REDUCE_SMIN:
+    case VP_REDUCE_UMAX:
+    case VP_REDUCE_UMIN:
+    case VP_REDUCE_FMAX:
+    case VP_REDUCE_FMIN:
       return 2;
   }
 }
 
 unsigned
-ISD::GetFunctionOpCodeForEVL(unsigned OpCode) {
+ISD::GetFunctionOpCodeForVP(unsigned OpCode) {
   switch (OpCode) {
     default: return OpCode;
 
-    case ISD::EVL_SELECT: return ISD::VSELECT;
-    case ISD::EVL_FNEG:   return ISD::FNEG;
-    case ISD::EVL_ADD:    return ISD::ADD;
-    case ISD::EVL_SUB:    return ISD::SUB;
-    case ISD::EVL_MUL:    return ISD::MUL;
-    case ISD::EVL_SDIV:   return ISD::SDIV;
-    case ISD::EVL_SREM:   return ISD::SREM;
-    case ISD::EVL_UDIV:   return ISD::UDIV;
-    case ISD::EVL_UREM:   return ISD::UREM;
+    case VP_SELECT: return ISD::VSELECT;
+    case VP_FNEG:   return ISD::FNEG;
+    case VP_ADD:    return ISD::ADD;
+    case VP_SUB:    return ISD::SUB;
+    case VP_MUL:    return ISD::MUL;
+    case VP_SDIV:   return ISD::SDIV;
+    case VP_SREM:   return ISD::SREM;
+    case VP_UDIV:   return ISD::UDIV;
+    case VP_UREM:   return ISD::UREM;
 
-    case ISD::EVL_AND:    return ISD::AND;
-    case ISD::EVL_OR:     return ISD::OR;
-    case ISD::EVL_XOR:    return ISD::XOR;
-    case ISD::EVL_SHL:    return ISD::SHL;
-    case ISD::EVL_SRA:    return ISD::SRA;
-    case ISD::EVL_SRL:    return ISD::SRL;
-    case ISD::EVL_FDIV:   return ISD::FDIV;
-    case ISD::EVL_FREM:   return ISD::FREM;
+    case VP_AND:    return ISD::AND;
+    case VP_OR:     return ISD::OR;
+    case VP_XOR:    return ISD::XOR;
+    case VP_SHL:    return ISD::SHL;
+    case VP_SRA:    return ISD::SRA;
+    case VP_SRL:    return ISD::SRL;
+    case VP_FDIV:   return ISD::FDIV;
+    case VP_FREM:   return ISD::FREM;
 
-    case ISD::EVL_FADD:   return ISD::FADD;
-    case ISD::EVL_FMUL:   return ISD::FMUL;
+    case VP_FADD:   return ISD::FADD;
+    case VP_FMUL:   return ISD::FMUL;
 
-    case ISD::EVL_FMA:    return ISD::FMA;
+    case VP_FMA:    return ISD::FMA;
   }
 }
 
 unsigned
-ISD::GetEVLForFunctionOpCode(unsigned OpCode) {
+ISD::GetVPForFunctionOpCode(unsigned OpCode) {
   switch (OpCode) {
-    default: llvm_unreachable("can not translate this Opcode to EVL");
+    default: llvm_unreachable("can not translate this Opcode to VP");
 
-    case ISD::VSELECT:return ISD::EVL_SELECT;
-    case ISD::FNEG:   return ISD::EVL_FNEG;
-    case ISD::ADD:    return ISD::EVL_ADD;
-    case ISD::SUB:    return ISD::EVL_SUB;
-    case ISD::MUL:    return ISD::EVL_MUL;
-    case ISD::SDIV:   return ISD::EVL_SDIV;
-    case ISD::SREM:   return ISD::EVL_SREM;
-    case ISD::UDIV:   return ISD::EVL_UDIV;
-    case ISD::UREM:   return ISD::EVL_UREM;
+    case VSELECT:return ISD::VP_SELECT;
+    case FNEG:   return ISD::VP_FNEG;
+    case ADD:    return ISD::VP_ADD;
+    case SUB:    return ISD::VP_SUB;
+    case MUL:    return ISD::VP_MUL;
+    case SDIV:   return ISD::VP_SDIV;
+    case SREM:   return ISD::VP_SREM;
+    case UDIV:   return ISD::VP_UDIV;
+    case UREM:   return ISD::VP_UREM;
 
-    case ISD::AND:    return ISD::EVL_AND;
-    case ISD::OR:     return ISD::EVL_OR;
-    case ISD::XOR:    return ISD::EVL_XOR;
-    case ISD::SHL:    return ISD::EVL_SHL;
-    case ISD::SRA:    return ISD::EVL_SRA;
-    case ISD::SRL:    return ISD::EVL_SRL;
-    case ISD::FDIV:   return ISD::EVL_FDIV;
-    case ISD::FREM:   return ISD::EVL_FREM;
+    case AND:    return ISD::VP_AND;
+    case OR:     return ISD::VP_OR;
+    case XOR:    return ISD::VP_XOR;
+    case SHL:    return ISD::VP_SHL;
+    case SRA:    return ISD::VP_SRA;
+    case SRL:    return ISD::VP_SRL;
+    case FDIV:   return ISD::VP_FDIV;
+    case FREM:   return ISD::VP_FREM;
 
-    case ISD::FADD:   return ISD::EVL_FADD;
-    case ISD::FMUL:   return ISD::EVL_FMUL;
+    case FADD:   return ISD::VP_FADD;
+    case FMUL:   return ISD::VP_FMUL;
 
-    case ISD::FMA:    return ISD::EVL_FMA;
+    case FMA:    return ISD::VP_FMA;
   }
 }
 
@@ -735,29 +733,29 @@ static void AddNodeIDCustom(FoldingSetNodeID &ID, const SDNode *N) {
     ID.AddInteger(ST->getPointerInfo().getAddrSpace());
     break;
   }
-  case ISD::EVL_LOAD: {
-    const EVLLoadSDNode *ELD = cast<EVLLoadSDNode>(N);
+  case ISD::VP_LOAD: {
+    const VPLoadSDNode *ELD = cast<VPLoadSDNode>(N);
     ID.AddInteger(ELD->getMemoryVT().getRawBits());
     ID.AddInteger(ELD->getRawSubclassData());
     ID.AddInteger(ELD->getPointerInfo().getAddrSpace());
     break;
   }
-  case ISD::EVL_STORE: {
-    const EVLStoreSDNode *EST = cast<EVLStoreSDNode>(N);
+  case ISD::VP_STORE: {
+    const VPStoreSDNode *EST = cast<VPStoreSDNode>(N);
     ID.AddInteger(EST->getMemoryVT().getRawBits());
     ID.AddInteger(EST->getRawSubclassData());
     ID.AddInteger(EST->getPointerInfo().getAddrSpace());
     break;
   }
-  case ISD::EVL_GATHER: {
-    const EVLGatherSDNode *EG = cast<EVLGatherSDNode>(N);
+  case ISD::VP_GATHER: {
+    const VPGatherSDNode *EG = cast<VPGatherSDNode>(N);
     ID.AddInteger(EG->getMemoryVT().getRawBits());
     ID.AddInteger(EG->getRawSubclassData());
     ID.AddInteger(EG->getPointerInfo().getAddrSpace());
     break;
   }
-  case ISD::EVL_SCATTER: {
-    const EVLScatterSDNode *ES = cast<EVLScatterSDNode>(N);
+  case ISD::VP_SCATTER: {
+    const VPScatterSDNode *ES = cast<VPScatterSDNode>(N);
     ID.AddInteger(ES->getMemoryVT().getRawBits());
     ID.AddInteger(ES->getRawSubclassData());
     ID.AddInteger(ES->getPointerInfo().getAddrSpace());
@@ -6993,24 +6991,24 @@ SDValue SelectionDAG::getIndexedStore(SDValue OrigStore, const SDLoc &dl,
   return V;
 }
 
-SDValue SelectionDAG::getLoadEVL(EVT VT, const SDLoc &dl, SDValue Chain,
+SDValue SelectionDAG::getLoadVP(EVT VT, const SDLoc &dl, SDValue Chain,
                                     SDValue Ptr, SDValue Mask, SDValue VLen,
                                     EVT MemVT, MachineMemOperand *MMO,
                                     ISD::LoadExtType ExtTy) {
   SDVTList VTs = getVTList(VT, MVT::Other);
   SDValue Ops[] = { Chain, Ptr, Mask, VLen };
   FoldingSetNodeID ID;
-  AddNodeIDNode(ID, ISD::EVL_LOAD, VTs, Ops);
+  AddNodeIDNode(ID, ISD::VP_LOAD, VTs, Ops);
   ID.AddInteger(VT.getRawBits());
-  ID.AddInteger(getSyntheticNodeSubclassData<EVLLoadSDNode>(
+  ID.AddInteger(getSyntheticNodeSubclassData<VPLoadSDNode>(
       dl.getIROrder(), VTs, ExtTy, MemVT, MMO));
   ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
   void *IP = nullptr;
   if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
-    cast<EVLLoadSDNode>(E)->refineAlignment(MMO);
+    cast<VPLoadSDNode>(E)->refineAlignment(MMO);
     return SDValue(E, 0);
   }
-  auto *N = newSDNode<EVLLoadSDNode>(dl.getIROrder(), dl.getDebugLoc(), VTs,
+  auto *N = newSDNode<VPLoadSDNode>(dl.getIROrder(), dl.getDebugLoc(), VTs,
                                         ExtTy, MemVT, MMO);
   createOperands(N, Ops);
 
@@ -7049,7 +7047,7 @@ SDValue SelectionDAG::getMaskedLoad(EVT VT, const SDLoc &dl, SDValue Chain,
   return V;
 }
 
-SDValue SelectionDAG::getStoreEVL(SDValue Chain, const SDLoc &dl,
+SDValue SelectionDAG::getStoreVP(SDValue Chain, const SDLoc &dl,
                                      SDValue Val, SDValue Ptr, SDValue Mask,
                                      SDValue VLen, EVT MemVT, MachineMemOperand *MMO,
                                      bool IsTruncating) {
@@ -7059,17 +7057,17 @@ SDValue SelectionDAG::getStoreEVL(SDValue Chain, const SDLoc &dl,
   SDVTList VTs = getVTList(MVT::Other);
   SDValue Ops[] = { Chain, Val, Ptr, Mask, VLen };
   FoldingSetNodeID ID;
-  AddNodeIDNode(ID, ISD::EVL_STORE, VTs, Ops);
+  AddNodeIDNode(ID, ISD::VP_STORE, VTs, Ops);
   ID.AddInteger(VT.getRawBits());
-  ID.AddInteger(getSyntheticNodeSubclassData<EVLStoreSDNode>(
+  ID.AddInteger(getSyntheticNodeSubclassData<VPStoreSDNode>(
       dl.getIROrder(), VTs, IsTruncating, MemVT, MMO));
   ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
   void *IP = nullptr;
   if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
-    cast<EVLStoreSDNode>(E)->refineAlignment(MMO);
+    cast<VPStoreSDNode>(E)->refineAlignment(MMO);
     return SDValue(E, 0);
   }
-  auto *N = newSDNode<EVLStoreSDNode>(dl.getIROrder(), dl.getDebugLoc(), VTs,
+  auto *N = newSDNode<VPStoreSDNode>(dl.getIROrder(), dl.getDebugLoc(), VTs,
                                          IsTruncating, MemVT, MMO);
   createOperands(N, Ops);
 
@@ -7080,24 +7078,24 @@ SDValue SelectionDAG::getStoreEVL(SDValue Chain, const SDLoc &dl,
   return V;
 }
 
-SDValue SelectionDAG::getGatherEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+SDValue SelectionDAG::getGatherVP(SDVTList VTs, EVT VT, const SDLoc &dl,
                                       ArrayRef<SDValue> Ops,
                                       MachineMemOperand *MMO) {
   assert(Ops.size() == 6 && "Incompatible number of operands");
 
   FoldingSetNodeID ID;
-  AddNodeIDNode(ID, ISD::EVL_GATHER, VTs, Ops);
+  AddNodeIDNode(ID, ISD::VP_GATHER, VTs, Ops);
   ID.AddInteger(VT.getRawBits());
   ID.AddInteger(getSyntheticNodeSubclassData<MaskedGatherSDNode>(
       dl.getIROrder(), VTs, VT, MMO));
   ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
   void *IP = nullptr;
   if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
-    cast<EVLGatherSDNode>(E)->refineAlignment(MMO);
+    cast<VPGatherSDNode>(E)->refineAlignment(MMO);
     return SDValue(E, 0);
   }
 
-  auto *N = newSDNode<EVLGatherSDNode>(dl.getIROrder(), dl.getDebugLoc(),
+  auto *N = newSDNode<VPGatherSDNode>(dl.getIROrder(), dl.getDebugLoc(),
                                           VTs, VT, MMO);
   createOperands(N, Ops);
 
@@ -7118,23 +7116,23 @@ SDValue SelectionDAG::getGatherEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
   return V;
 }
 
-SDValue SelectionDAG::getScatterEVL(SDVTList VTs, EVT VT, const SDLoc &dl,
+SDValue SelectionDAG::getScatterVP(SDVTList VTs, EVT VT, const SDLoc &dl,
                                        ArrayRef<SDValue> Ops,
                                        MachineMemOperand *MMO) {
   assert(Ops.size() == 7 && "Incompatible number of operands");
 
   FoldingSetNodeID ID;
-  AddNodeIDNode(ID, ISD::EVL_SCATTER, VTs, Ops);
+  AddNodeIDNode(ID, ISD::VP_SCATTER, VTs, Ops);
   ID.AddInteger(VT.getRawBits());
   ID.AddInteger(getSyntheticNodeSubclassData<MaskedScatterSDNode>(
       dl.getIROrder(), VTs, VT, MMO));
   ID.AddInteger(MMO->getPointerInfo().getAddrSpace());
   void *IP = nullptr;
   if (SDNode *E = FindNodeOrInsertPos(ID, dl, IP)) {
-    cast<EVLScatterSDNode>(E)->refineAlignment(MMO);
+    cast<VPScatterSDNode>(E)->refineAlignment(MMO);
     return SDValue(E, 0);
   }
-  auto *N = newSDNode<EVLScatterSDNode>(dl.getIROrder(), dl.getDebugLoc(),
+  auto *N = newSDNode<VPScatterSDNode>(dl.getIROrder(), dl.getDebugLoc(),
                                            VTs, VT, MMO);
   createOperands(N, Ops);
 

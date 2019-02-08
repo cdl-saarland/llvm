@@ -128,10 +128,10 @@ def SDTIntScaledBinOp : SDTypeProfile<1, 3, [  // smulfix, umulfix
   SDTCisSameAs<0, 1>, SDTCisSameAs<0, 2>, SDTCisInt<0>, SDTCisInt<3>
 ]>;
 
-def SDTIntBinOpEVL : SDTypeProfile<1, 4, [     // evl_add, evl_and, etc.
+def SDTIntBinOpVP : SDTypeProfile<1, 4, [     // vp_add, vp_and, etc.
   SDTCisSameAs<0, 1>, SDTCisSameAs<0, 2>, SDTCisInt<0>, SDTCisInt<4>, SDTCisSameNumEltsAs<0, 3>
 ]>;
-def SDTIntShiftOpEVL : SDTypeProfile<1, 4, [   // shl, sra, srl
+def SDTIntShiftOpVP : SDTypeProfile<1, 4, [   // shl, sra, srl
   SDTCisSameAs<0, 1>, SDTCisInt<0>, SDTCisInt<2>, SDTCisInt<4>, SDTCisSameNumEltsAs<0, 3>
 ]>;
 
@@ -177,13 +177,13 @@ def SDTExtInvec : SDTypeProfile<1, 1, [     // sext_invec
   SDTCisOpSmallerThanOp<1, 0>
 ]>;
 
-def SDTFPUnOpEVL : SDTypeProfile<1, 3, [   // evl_fneg, etc.
+def SDTFPUnOpVP : SDTypeProfile<1, 3, [   // vp_fneg, etc.
   SDTCisSameAs<0, 1>, SDTCisFP<0>, SDTCisInt<3>, SDTCisSameNumEltsAs<0, 2>
 ]>;
-def SDTFPBinOpEVL : SDTypeProfile<1, 4, [   // evl_fadd, etc.
+def SDTFPBinOpVP : SDTypeProfile<1, 4, [   // vp_fadd, etc.
   SDTCisSameAs<0, 1>, SDTCisSameAs<0, 2>, SDTCisFP<0>, SDTCisInt<4>, SDTCisSameNumEltsAs<0, 3>
 ]>;
-def SDTFPTernaryOpEVL : SDTypeProfile<1, 5, [  // evl_fmadd, etc.
+def SDTFPTernaryOpVP : SDTypeProfile<1, 5, [  // vp_fmadd, etc.
   SDTCisSameAs<0, 1>, SDTCisSameAs<0, 2>, SDTCisSameAs<0, 3>, SDTCisFP<0>, SDTCisInt<5>, SDTCisSameNumEltsAs<0, 4>
 ]>;
 
@@ -199,7 +199,7 @@ def SDTVSelect : SDTypeProfile<1, 3, [       // vselect
   SDTCisVec<0>, SDTCisInt<1>, SDTCisSameAs<0, 2>, SDTCisSameAs<2, 3>, SDTCisSameNumEltsAs<0, 1>
 ]>;
 
-def SDTVSelectEVL : SDTypeProfile<1, 5, [       // evl_vselect
+def SDTVSelectVP : SDTypeProfile<1, 5, [       // vp_vselect
   SDTCisVec<0>, SDTCisInt<1>, SDTCisSameAs<0, 2>, SDTCisSameAs<2, 3>, SDTCisSameNumEltsAs<0, 1>, SDTCisInt<5>, SDTCisSameNumEltsAs<0, 4>
 ]>;
 
@@ -246,7 +246,7 @@ def SDTMaskedStore: SDTypeProfile<0, 3, [       // masked store
   SDTCisVec<0>, SDTCisPtrTy<1>, SDTCisVec<2>, SDTCisSameNumEltsAs<0, 2>
 ]>;
 
-def SDTStoreEVL: SDTypeProfile<0, 4, [       // evl store
+def SDTStoreVP: SDTypeProfile<0, 4, [       // evl store
   SDTCisVec<0>, SDTCisPtrTy<1>, SDTCisVec<2>, SDTCisSameNumEltsAs<0, 2>, SDTCisInt<3>
 ]>;
 
@@ -255,7 +255,7 @@ def SDTMaskedLoad: SDTypeProfile<1, 3, [       // masked load
   SDTCisSameNumEltsAs<0, 2>
 ]>;
 
-def SDTLoadEVL : SDTypeProfile<1, 3, [       // evl load
+def SDTLoadVP : SDTypeProfile<1, 3, [       // evl load
   SDTCisVec<0>, SDTCisPtrTy<1>, SDTCisSameNumEltsAs<0, 2>, SDTCisInt<3>,
   SDTCisSameNumEltsAs<0, 2>
 ]>;
@@ -415,25 +415,25 @@ def umin       : SDNode<"ISD::UMIN"      , SDTIntBinOp,
 def umax       : SDNode<"ISD::UMAX"      , SDTIntBinOp,
                                   [SDNPCommutative, SDNPAssociative]>;
 
-def evl_and        : SDNode<"ISD::EVL_AND"       , SDTIntBinOpEVL   ,
+def vp_and        : SDNode<"ISD::VP_AND"       , SDTIntBinOpVP   ,
                         [SDNPCommutative, SDNPAssociative]>;
-def evl_or        : SDNode<"ISD::EVL_OR"       , SDTIntBinOpEVL   ,
+def vp_or        : SDNode<"ISD::VP_OR"       , SDTIntBinOpVP   ,
                         [SDNPCommutative, SDNPAssociative]>;
-def evl_xor        : SDNode<"ISD::EVL_XOR"       , SDTIntBinOpEVL   ,
+def vp_xor        : SDNode<"ISD::VP_XOR"       , SDTIntBinOpVP   ,
                         [SDNPCommutative, SDNPAssociative]>;
-def evl_srl        : SDNode<"ISD::EVL_SRL"       , SDTIntShiftOpEVL>;
-def evl_sra        : SDNode<"ISD::EVL_SRA"       , SDTIntShiftOpEVL>;
-def evl_shl        : SDNode<"ISD::EVL_SHL"       , SDTIntShiftOpEVL>;
+def vp_srl        : SDNode<"ISD::VP_SRL"       , SDTIntShiftOpVP>;
+def vp_sra        : SDNode<"ISD::VP_SRA"       , SDTIntShiftOpVP>;
+def vp_shl        : SDNode<"ISD::VP_SHL"       , SDTIntShiftOpVP>;
 
-def evl_add        : SDNode<"ISD::EVL_ADD"       , SDTIntBinOpEVL   ,
+def vp_add        : SDNode<"ISD::VP_ADD"       , SDTIntBinOpVP   ,
                         [SDNPCommutative, SDNPAssociative]>;
-def evl_sub        : SDNode<"ISD::EVL_SUB"       , SDTIntBinOpEVL>;
-def evl_mul        : SDNode<"ISD::EVL_MUL"       , SDTIntBinOpEVL,
+def vp_sub        : SDNode<"ISD::VP_SUB"       , SDTIntBinOpVP>;
+def vp_mul        : SDNode<"ISD::VP_MUL"       , SDTIntBinOpVP,
                         [SDNPCommutative, SDNPAssociative]>;
-def evl_sdiv       : SDNode<"ISD::EVL_SDIV"      , SDTIntBinOpEVL>;
-def evl_udiv       : SDNode<"ISD::EVL_UDIV"      , SDTIntBinOpEVL>;
-def evl_srem       : SDNode<"ISD::EVL_SREM"      , SDTIntBinOpEVL>;
-def evl_urem       : SDNode<"ISD::EVL_UREM"      , SDTIntBinOpEVL>;
+def vp_sdiv       : SDNode<"ISD::VP_SDIV"      , SDTIntBinOpVP>;
+def vp_udiv       : SDNode<"ISD::VP_UDIV"      , SDTIntBinOpVP>;
+def vp_srem       : SDNode<"ISD::VP_SREM"      , SDTIntBinOpVP>;
+def vp_urem       : SDNode<"ISD::VP_UREM"      , SDTIntBinOpVP>;
 
 def saddsat    : SDNode<"ISD::SADDSAT"   , SDTIntBinOp, [SDNPCommutative]>;
 def uaddsat    : SDNode<"ISD::UADDSAT"   , SDTIntBinOp, [SDNPCommutative]>;
@@ -504,13 +504,13 @@ def fpround    : SDNode<"ISD::FP_ROUND"   , SDTFPRoundOp>;
 def fpextend   : SDNode<"ISD::FP_EXTEND"  , SDTFPExtendOp>;
 def fcopysign  : SDNode<"ISD::FCOPYSIGN"  , SDTFPSignOp>;
 
-def evl_fneg       : SDNode<"ISD::EVL_FNEG"       , SDTFPUnOpEVL>;
-def evl_fadd       : SDNode<"ISD::EVL_FADD"       , SDTFPBinOpEVL, [SDNPCommutative]>;
-def evl_fsub       : SDNode<"ISD::EVL_FSUB"       , SDTFPBinOpEVL>;
-def evl_fmul       : SDNode<"ISD::EVL_FMUL"       , SDTFPBinOpEVL, [SDNPCommutative]>;
-def evl_fdiv       : SDNode<"ISD::EVL_FDIV"       , SDTFPBinOpEVL>;
-def evl_frem       : SDNode<"ISD::EVL_FREM"       , SDTFPBinOpEVL>;
-def evl_fma        : SDNode<"ISD::EVL_FMA"        , SDTFPTernaryOpEVL>;
+def vp_fneg       : SDNode<"ISD::VP_FNEG"       , SDTFPUnOpVP>;
+def vp_fadd       : SDNode<"ISD::VP_FADD"       , SDTFPBinOpVP, [SDNPCommutative]>;
+def vp_fsub       : SDNode<"ISD::VP_FSUB"       , SDTFPBinOpVP>;
+def vp_fmul       : SDNode<"ISD::VP_FMUL"       , SDTFPBinOpVP, [SDNPCommutative]>;
+def vp_fdiv       : SDNode<"ISD::VP_FDIV"       , SDTFPBinOpVP>;
+def vp_frem       : SDNode<"ISD::VP_FREM"       , SDTFPBinOpVP>;
+def vp_fma        : SDNode<"ISD::VP_FMA"        , SDTFPTernaryOpVP>;
 
 def sint_to_fp : SDNode<"ISD::SINT_TO_FP" , SDTIntToFPOp>;
 def uint_to_fp : SDNode<"ISD::UINT_TO_FP" , SDTIntToFPOp>;
@@ -590,9 +590,9 @@ def masked_store : SDNode<"ISD::MSTORE",  SDTMaskedStore,
 def masked_load  : SDNode<"ISD::MLOAD",  SDTMaskedLoad,
                        [SDNPHasChain, SDNPMayLoad, SDNPMemOperand]>;
 
-def evl_store : SDNode<"ISD::EVL_STORE",  SDTMaskedStore,
+def vp_store : SDNode<"ISD::VP_STORE",  SDTStoreVP,
                        [SDNPHasChain, SDNPMayStore, SDNPMemOperand]>;
-def evl_load  : SDNode<"ISD::EVL_LOAD",  SDTMaskedLoad,
+def vp_load  : SDNode<"ISD::VP_LOAD",  SDTLoadVP,
                        [SDNPHasChain, SDNPMayLoad, SDNPMemOperand]>;
 
 // Do not use ld, st directly. Use load, extload, sextload, zextload, store,
