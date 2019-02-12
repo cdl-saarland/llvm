@@ -168,6 +168,32 @@ VPIntrinsic::getVectorLength() const {
   else return nullptr;
 }
 
+bool VPIntrinsic::isReductionOp() const {
+  switch (getIntrinsicID()) {
+    default:
+      return false;
+
+    case Intrinsic::vp_reduce_and:
+    case Intrinsic::vp_reduce_or:
+    case Intrinsic::vp_reduce_xor:
+
+    case Intrinsic::vp_reduce_add:
+    case Intrinsic::vp_reduce_mul:
+    case Intrinsic::vp_reduce_fadd:
+    case Intrinsic::vp_reduce_fmul:
+
+    case Intrinsic::vp_reduce_fmin:
+    case Intrinsic::vp_reduce_fmax:
+    case Intrinsic::vp_reduce_smin:
+    case Intrinsic::vp_reduce_smax:
+    case Intrinsic::vp_reduce_umin:
+    case Intrinsic::vp_reduce_umax:
+
+      return true;
+  }
+}
+
+
 bool VPIntrinsic::isBinaryOp() const {
   switch (getIntrinsicID()) {
     default:

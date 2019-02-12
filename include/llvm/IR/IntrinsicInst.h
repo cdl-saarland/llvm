@@ -234,6 +234,7 @@ namespace llvm {
     bool isUnaryOp() const;
     bool isBinaryOp() const;
     bool isTernaryOp() const;
+    bool isReductionOp() const;
 
     CmpInst::Predicate getCmpPredicate() const;
 
