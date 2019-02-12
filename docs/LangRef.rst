@@ -13979,6 +13979,23 @@ intrinsic returns the executable address corresponding to ``tramp``
 after performing the required machine specific adjustments. The pointer
 returned can then be :ref:`bitcast and executed <int_trampoline>`.
 
+
+.. _int_vp:
+
+Vector Predication Intrinsics
+----------------------------
+VP intrinics are intended for predicated SIMD/vector code.
+A typical VP operation takes a mask (<W x i1>) and an explicit vector length parameter (i32) as in:
+
+    <W x T> llvm.vp.<opcode>.*(<W x T> %x, <W x T> %y, <W x i1> mask %Mask, i32 vlen %evl)
+
+The mask and explicit vector length parameter are unambiguously identified by the mask and vlen parameter attributes. 
+Result elements are only computed for enabled lanes.
+The explicit vector length parameter only disables lane if the MSB of the parameter is zero.
+A lane is enabled if the mask at that position is true and, if effective, where the lane position is below the explicit vector length.
+
+In case of purely vertical operations (SIMD binary operators, etc) the result is undef on disabled lanes.
+
 .. _int_mload_mstore:
 
 Masked Vector Load and Store Intrinsics
