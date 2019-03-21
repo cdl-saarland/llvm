@@ -651,6 +651,7 @@ multiclass VSTm<string opcStr, bits<8> opc> {
   let vc = 0, cx = 1 in defm ncot : VSTCm<!strconcat(opcStr, ".nc.ot"), opc>;
 }
 
+let mayLoad = 1 in {
 defm VLD : VLDm<"vld", 0x81>;
 defm VLDU : VLDm<"vldu", 0x82>;
 let cx = 0 in defm VLDLsx : VLDm<"vldl.sx", 0x83>;
@@ -660,7 +661,9 @@ defm VLD2D  : VLDm<"vld2d", 0xC1>;
 defm VLDU2D : VLDm<"vldu2d", 0xC2>;
 let cx = 0 in defm VLDL2Dsx : VLDm<"vldl2d.sx", 0xC3>;
 let cx = 1 in defm VLDL2Dzx : VLDm<"vldl2d.zx", 0xC3>;
+}
 
+let mayStore = 1 in {
 defm VST : VSTm<"vst", 0x91>;
 defm VSTU : VSTm<"vstu", 0x92>;
 defm VSTL : VSTm<"vstl", 0x93>;
@@ -668,6 +671,7 @@ defm VSTL : VSTm<"vstl", 0x93>;
 defm VST2D  : VSTm<"vst2d", 0xD1>;
 defm VSTU2D : VSTm<"vstu2d", 0xD2>;
 defm VSTL2D : VSTm<"vstl2d", 0xD3>;
+}
 
 def LSVr : RR<0x8E, (outs V64:$dst), (ins V64:$vx, I32:$sy, I64:$sz), 
   "lsv ${vx}(${sy}),$sz", []> {

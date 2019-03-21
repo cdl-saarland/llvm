@@ -416,20 +416,20 @@ def umax       : SDNode<"ISD::UMAX"      , SDTIntBinOp,
                                   [SDNPCommutative, SDNPAssociative]>;
 
 def vp_and        : SDNode<"ISD::VP_AND"       , SDTIntBinOpVP   ,
-                        [SDNPCommutative, SDNPAssociative]>;
+                        [SDNPCommutative]>; // Also SDNPAssociative, but not applicable with 4 children.
 def vp_or        : SDNode<"ISD::VP_OR"       , SDTIntBinOpVP   ,
-                        [SDNPCommutative, SDNPAssociative]>;
+                        [SDNPCommutative]>; // Also SDNPAssociative, but not applicable with 4 children.
 def vp_xor        : SDNode<"ISD::VP_XOR"       , SDTIntBinOpVP   ,
-                        [SDNPCommutative, SDNPAssociative]>;
+                        [SDNPCommutative]>; // Also SDNPAssociative, but not applicable with 4 children.
 def vp_srl        : SDNode<"ISD::VP_SRL"       , SDTIntShiftOpVP>;
 def vp_sra        : SDNode<"ISD::VP_SRA"       , SDTIntShiftOpVP>;
 def vp_shl        : SDNode<"ISD::VP_SHL"       , SDTIntShiftOpVP>;
 
 def vp_add        : SDNode<"ISD::VP_ADD"       , SDTIntBinOpVP   ,
-                        [SDNPCommutative, SDNPAssociative]>;
+                        [SDNPCommutative]>; // Also SDNPAssociative, but not applicable with 4 children.
 def vp_sub        : SDNode<"ISD::VP_SUB"       , SDTIntBinOpVP>;
 def vp_mul        : SDNode<"ISD::VP_MUL"       , SDTIntBinOpVP,
-                        [SDNPCommutative, SDNPAssociative]>;
+                        [SDNPCommutative]>; // Also SDNPAssociative, but not applicable with 4 children.
 def vp_sdiv       : SDNode<"ISD::VP_SDIV"      , SDTIntBinOpVP>;
 def vp_udiv       : SDNode<"ISD::VP_UDIV"      , SDTIntBinOpVP>;
 def vp_srem       : SDNode<"ISD::VP_SREM"      , SDTIntBinOpVP>;

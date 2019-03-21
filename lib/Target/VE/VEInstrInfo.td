@@ -2160,6 +2160,9 @@ include "VEInstrIntrinsic.td"
 // vector intrinsic patterns which hand-modified to support vector mask
 include "VEInstrIntrinsic2.td"
 
+// VP intrinsics
+include "VEVPIntrinsic.td"
+
 // generic vector instruction patterns
 include "VEInstrPatternsVec.td"
 
