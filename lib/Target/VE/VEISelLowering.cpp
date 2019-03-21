@@ -209,16 +209,33 @@ VETargetLowering::LowerMGATHER_MSCATTER(SDValue Op, SelectionDAG &DAG) const {
   //dbgs() << "\nNext Instr:\n";
   //Op.dumpr(&DAG);
 
-  MaskedGatherScatterSDNode *N = cast<MaskedGatherScatterSDNode>(Op.getNode());
-
-  SDValue Index = N->getIndex();
-  SDValue BasePtr = N->getBasePtr();
-  SDValue Mask = N->getMask();
-  SDValue Chain = N->getChain();
-  SDValue Scale = N->getScale();
-
+  SDValue Index;
+  SDValue BasePtr;
+  SDValue Mask;
+  SDValue Chain;
+  SDValue Scale;
   SDValue PassThru;
   SDValue Source;
+
+  if (Op.getOpcode() == ISD::MGATHER || Op.getOpcode() == ISD::MSCATTER) {
+    MaskedGatherScatterSDNode *N = cast<MaskedGatherScatterSDNode>(Op.getNode());
+
+    Index = N->getIndex();
+    BasePtr = N->getBasePtr();
+    Mask = N->getMask();
+    Chain = N->getChain();
+    Scale = N->getScale();
+  } else if (Op.getOpcode() == ISD::VP_GATHER || Op.getOpcode() == ISD::VP_SCATTER) {
+    VPGatherScatterSDNode *N = cast<VPGatherScatterSDNode>(Op.getNode());
+
+    Index = N->getIndex();
+    BasePtr = N->getBasePtr();
+    Mask = N->getMask();
+    Chain = N->getChain();
+    Scale = N->getScale();
+  } else {
+    llvm_unreachable("Unexpected SDNode in lowering function");
+  }
 
   if (Op.getOpcode() == ISD::MGATHER) {
     MaskedGatherSDNode *N = cast<MaskedGatherSDNode>(Op.getNode());
@@ -226,8 +243,12 @@ VETargetLowering::LowerMGATHER_MSCATTER(SDValue Op, SelectionDAG &DAG) const {
   } else if (Op.getOpcode() == ISD::MSCATTER) {
     MaskedScatterSDNode *N = cast<MaskedScatterSDNode>(Op.getNode());
     Source = N->getValue();
-  } else {
-    llvm_unreachable("Unexpected SDNode in lowering function");
+  } else if (Op.getOpcode() == ISD::VP_GATHER) {
+    VPGatherSDNode *N = cast<VPGatherSDNode>(Op.getNode());
+    PassThru = DAG.getUNDEF(Op.getValueType());
+  } else if (Op.getOpcode() == ISD::VP_SCATTER) {
+    VPScatterSDNode *N = cast<VPScatterSDNode>(Op.getNode());
+    Source = N->getValue();
   }
 
   MVT IndexVT = Index.getSimpleValueType();
@@ -251,7 +272,7 @@ VETargetLowering::LowerMGATHER_MSCATTER(SDValue Op, SelectionDAG &DAG) const {
     addresses = DAG.getNode(ISD::ADD, dl, IndexVT, {BaseBroadcast, ScaledIndex});
   }
 
-  if (Op.getOpcode() == ISD::MGATHER) {
+  if (Op.getOpcode() == ISD::MGATHER || Op.getOpcode() == ISD::VP_GATHER) {
     // vt = vgt (vindex, vmx, cs=0, sx=0, sy=0, sw=0);
     SDValue load = DAG.getNode(VEISD::VEC_GATHER, dl, Op.getNode()->getVTList(), {Chain, addresses, Mask});
     //load.dumpr(&DAG);
@@ -1592,6 +1613,8 @@ VETargetLowering::VETargetLowering(const TargetMachine &TM,
 
       setOperationAction(ISD::MSCATTER,   VT, Custom);
       setOperationAction(ISD::MGATHER,   VT, Custom);
+      setOperationAction(ISD::VP_SCATTER,   VT, Custom);
+      setOperationAction(ISD::VP_GATHER,   VT, Custom);
 
       setOperationAction(ISD::MLOAD, VT, Custom);
 
@@ -3679,6 +3702,8 @@ LowerOperation(SDValue Op, SelectionDAG &DAG) const {
 
   case ISD::VECTOR_SHUFFLE:     return LowerVECTOR_SHUFFLE(Op, DAG);
 
+  case ISD::VP_SCATTER:
+  case ISD::VP_GATHER:
   case ISD::MSCATTER:
   case ISD::MGATHER:            return LowerMGATHER_MSCATTER(Op, DAG);
 
