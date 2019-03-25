@@ -512,6 +512,9 @@ VETargetLowering::LowerBUILD_VECTOR(SDValue Chain, SelectionDAG &DAG) const {
           hasBlockStride2 = true;
           blockLength = i;
         } else {
+          // not blockStride anymore.  e.g. { 0, 1, 2, 3, 0, 0, 0, 0 }
+          hasBlockStride = false;
+          hasBlockStride2 = false;
           break;
         }
       }
@@ -559,7 +562,9 @@ VETargetLowering::LowerBUILD_VECTOR(SDValue Chain, SelectionDAG &DAG) const {
 
       SDValue modulo = DAG.getNode(ISD::AND, DL, Chain.getSimpleValueType(), {sequence, modulobroadcast});
 
-      LLVM_DEBUG(dbgs() << "BlockStride2: VEC_SEQ & VEC_BROADCAST");
+      LLVM_DEBUG(dbgs() << "BlockStride2: VEC_SEQ & VEC_BROADCAST\n");
+      LLVM_DEBUG(sequence.dump());
+      LLVM_DEBUG(modulobroadcast.dump());
       LLVM_DEBUG(modulo.dump());
       return modulo;
     }
@@ -1483,12 +1488,18 @@ VETargetLowering::VETargetLowering(const TargetMachine &TM,
 
  // GENERIC VECTOR LEGAL / EXPAND cases
   for (MVT VT : MVT::vector_valuetypes()) {
-    setOperationAction(ISD::SELECT_CC,    VT, Custom);
-
-    if (VT.getVectorElementType() == MVT::i8 ||
-        VT.getVectorElementType() == MVT::i16) {
-      // VE doesn't support vXi8 and vXi16 value types, so mark
-      // them all as expanded
+    if (VT.getVectorElementType() == MVT::i1 ||
+        VT.getVectorElementType() == MVT::i8 ||
+        VT.getVectorElementType() == MVT::i16 ||
+        VT.getVectorNumElements() == 16 ||
+        VT.getVectorNumElements() == 32 ||
+        VT.getVectorNumElements() == 64 ||
+        VT.getVectorNumElements() == 128) {
+      // VE uses vXi1 types but has no generic operations.
+      // VE doesn't support vXi8 and vXi16 value types.
+      // LLVM doesn't support whole types (i32/i64/f32/f64) of
+      // each length (16/32/64/128).
+      // So, we mark them all as expanded.
 
       // Expand all vector-i8/i16-vector truncstore and extload
       for (MVT OuterVT : MVT::vector_valuetypes()) {
