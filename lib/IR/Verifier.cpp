@@ -472,6 +472,7 @@ private:
   void visitUserOp2(Instruction &I) { visitUserOp1(I); }
   void visitIntrinsicCall(Intrinsic::ID ID, CallBase &Call);
   void visitConstrainedFPIntrinsic(ConstrainedFPIntrinsic &FPI);
+  void visitVPIntrinsic(VPIntrinsic &FPI);
   void visitDbgIntrinsic(StringRef Kind, DbgVariableIntrinsic &DII);
   void visitDbgLabelIntrinsic(StringRef Kind, DbgLabelInst &DLI);
   void visitAtomicCmpXchgInst(AtomicCmpXchgInst &CXI);
@@ -4252,6 +4253,88 @@ void Verifier::visitIntrinsicCall(Intrinsic::ID ID, CallBase &Call) {
   case Intrinsic::experimental_constrained_trunc:
     visitConstrainedFPIntrinsic(cast<ConstrainedFPIntrinsic>(Call));
     break;
+
+  case Intrinsic::vp_cmp:
+
+  case Intrinsic::vp_and:
+  case Intrinsic::vp_or:
+  case Intrinsic::vp_xor:
+  case Intrinsic::vp_ashr:
+  case Intrinsic::vp_lshr:
+  case Intrinsic::vp_shl:
+
+  case Intrinsic::vp_select:
+  case Intrinsic::vp_compose:
+  case Intrinsic::vp_compress:
+  case Intrinsic::vp_expand:
+  case Intrinsic::vp_vshift:
+
+  case Intrinsic::vp_load:
+  case Intrinsic::vp_store:
+  case Intrinsic::vp_gather:
+  case Intrinsic::vp_scatter:
+
+  case Intrinsic::vp_fneg:
+
+  case Intrinsic::vp_fadd:
+  case Intrinsic::vp_fsub:
+  case Intrinsic::vp_fmul:
+  case Intrinsic::vp_fdiv:
+  case Intrinsic::vp_frem:
+
+  case Intrinsic::vp_fma:
+
+  case Intrinsic::vp_add:
+  case Intrinsic::vp_sub:
+  case Intrinsic::vp_mul:
+  case Intrinsic::vp_udiv:
+  case Intrinsic::vp_sdiv:
+  case Intrinsic::vp_urem:
+  case Intrinsic::vp_srem:
+
+  case Intrinsic::vp_reduce_add:
+  case Intrinsic::vp_reduce_mul:
+  case Intrinsic::vp_reduce_umin:
+  case Intrinsic::vp_reduce_umax:
+  case Intrinsic::vp_reduce_smin:
+  case Intrinsic::vp_reduce_smax:
+
+  case Intrinsic::vp_reduce_and:
+  case Intrinsic::vp_reduce_or:
+  case Intrinsic::vp_reduce_xor:
+
+  case Intrinsic::vp_reduce_fadd:
+  case Intrinsic::vp_reduce_fmul:
+  case Intrinsic::vp_reduce_fmin:
+  case Intrinsic::vp_reduce_fmax:
+
+  case Intrinsic::vp_constrained_fadd:
+  case Intrinsic::vp_constrained_fsub:
+  case Intrinsic::vp_constrained_fmul:
+  case Intrinsic::vp_constrained_fdiv:
+  case Intrinsic::vp_constrained_frem:
+  case Intrinsic::vp_constrained_fma:
+  case Intrinsic::vp_constrained_sqrt:
+  case Intrinsic::vp_constrained_pow:
+  case Intrinsic::vp_constrained_powi:
+  case Intrinsic::vp_constrained_sin:
+  case Intrinsic::vp_constrained_cos:
+  case Intrinsic::vp_constrained_exp:
+  case Intrinsic::vp_constrained_exp2:
+  case Intrinsic::vp_constrained_log:
+  case Intrinsic::vp_constrained_log10:
+  case Intrinsic::vp_constrained_log2:
+  case Intrinsic::vp_constrained_rint:
+  case Intrinsic::vp_constrained_nearbyint:
+  case Intrinsic::vp_constrained_maxnum:
+  case Intrinsic::vp_constrained_minnum:
+  case Intrinsic::vp_constrained_ceil:
+  case Intrinsic::vp_constrained_floor:
+  case Intrinsic::vp_constrained_round:
+  case Intrinsic::vp_constrained_trunc:
+    visitVPIntrinsic(cast<VPIntrinsic>(Call));
+    break;
+
   case Intrinsic::dbg_declare: // llvm.dbg.declare
     Assert(isa<MetadataAsValue>(Call.getArgOperand(0)),
            "invalid llvm.dbg.declare intrinsic call 1", Call);
@@ -4663,6 +4746,15 @@ static DISubprogram *getSubprogram(Metadata *LocalScope) {
   return nullptr;
 }
 
+void Verifier::visitVPIntrinsic(VPIntrinsic &VPI) {
+  if (VPI.isConstrainedOp()) {
+    Assert(VPI.getExceptionBehavior() != ExceptionBehavior::ebInvalid,
+           "invalid exception behavior argument", &VPI);
+    Assert(VPI.getRoundingMode() != RoundingMode::rmInvalid,
+           "invalid rounding mode argument", &VPI);
+  }
+}
+
 void Verifier::visitConstrainedFPIntrinsic(ConstrainedFPIntrinsic &FPI) {
   unsigned NumOperands = FPI.getNumArgOperands();
   bool HasExceptionMD = false;
@@ -4720,11 +4812,11 @@ void Verifier::visitConstrainedFPIntrinsic(ConstrainedFPIntrinsic &FPI) {
   // argument type check is needed here.
 
   if (HasExceptionMD) {
-    Assert(FPI.getExceptionBehavior() != ConstrainedFPIntrinsic::ebInvalid,
+    Assert(FPI.getExceptionBehavior() != ExceptionBehavior::ebInvalid,
            "invalid exception behavior argument", &FPI);
   }
   if (HasRoundingMD) {
-    Assert(FPI.getRoundingMode() != ConstrainedFPIntrinsic::rmInvalid,
+    Assert(FPI.getRoundingMode() != RoundingMode::rmInvalid,
            "invalid rounding mode argument", &FPI);
   }
 }

@@ -205,6 +205,22 @@ namespace llvm {
     /// @}
   };
 
+  enum class RoundingMode {
+    rmInvalid,
+    rmDynamic,
+    rmToNearest,
+    rmDownward,
+    rmUpward,
+    rmTowardZero
+  };
+
+  enum class ExceptionBehavior {
+    ebInvalid,
+    ebIgnore,
+    ebMayTrap,
+    ebStrict
+  };
+
   class VPIntrinsic : public IntrinsicInst {
   public:
     enum class VPTypeToken : int8_t {
@@ -224,22 +240,34 @@ namespace llvm {
       int EVLPos; // Parameter index of the VP parameter.
     };
 
-    // Translate this generic Opcode to an EVLIntrinsic
+    // Translate this generic Opcode to a VPIntrinsic
     static VPIntrinsicDesc GetVPIntrinsicDesc(unsigned OC);
+    // Translate this non-VP intrinsic to a VPIntrinsic.
+    static VPIntrinsicDesc GetVPDescForIntrinsic(unsigned IntrinsicID);
 
     // Generate the disambiguating type vec for this VP Intrinsic
     static VPIntrinsic::ShortTypeVec
     EncodeTypeTokens(VPIntrinsic::TypeTokenVec TTVec, Type & VectorTy, Type & ScalarTy);
 
+    // available for all VP intrinsics
+    Value* getMask() const;
+    Value* getVectorLength() const;
+
     bool isUnaryOp() const;
     bool isBinaryOp() const;
     bool isTernaryOp() const;
-    bool isReductionOp() const;
 
+    // compare intrinsic
+    bool isCompareOp() const { return getIntrinsicID() == Intrinsic::vp_cmp; }
     CmpInst::Predicate getCmpPredicate() const;
 
-    Value* getMask() const;
-    Value* getVectorLength() const;
+    // llvm.vp.constrained.*
+    bool isConstrainedOp() const;
+    RoundingMode getRoundingMode() const;
+    ExceptionBehavior getExceptionBehavior() const;
+
+    // llvm.vp.reduction.*
+    bool isReductionOp() const;
 
     // Methods for support type inquiry through isa, cast, and dyn_cast:
     static bool classof(const IntrinsicInst *I) {
@@ -300,6 +328,31 @@ namespace llvm {
       case Intrinsic::vp_reduce_fmul:
       case Intrinsic::vp_reduce_fmin:
       case Intrinsic::vp_reduce_fmax:
+
+      case Intrinsic::vp_constrained_fadd:
+      case Intrinsic::vp_constrained_fsub:
+      case Intrinsic::vp_constrained_fmul:
+      case Intrinsic::vp_constrained_fdiv:
+      case Intrinsic::vp_constrained_frem:
+      case Intrinsic::vp_constrained_fma:
+      case Intrinsic::vp_constrained_sqrt:
+      case Intrinsic::vp_constrained_pow:
+      case Intrinsic::vp_constrained_powi:
+      case Intrinsic::vp_constrained_sin:
+      case Intrinsic::vp_constrained_cos:
+      case Intrinsic::vp_constrained_exp:
+      case Intrinsic::vp_constrained_exp2:
+      case Intrinsic::vp_constrained_log:
+      case Intrinsic::vp_constrained_log10:
+      case Intrinsic::vp_constrained_log2:
+      case Intrinsic::vp_constrained_rint:
+      case Intrinsic::vp_constrained_nearbyint:
+      case Intrinsic::vp_constrained_maxnum:
+      case Intrinsic::vp_constrained_minnum:
+      case Intrinsic::vp_constrained_ceil:
+      case Intrinsic::vp_constrained_floor:
+      case Intrinsic::vp_constrained_round:
+      case Intrinsic::vp_constrained_trunc:
         return true;
       }
     }
@@ -353,22 +406,6 @@ namespace llvm {
   /// This is the common base class for constrained floating point intrinsics.
   class ConstrainedFPIntrinsic : public IntrinsicInst {
   public:
-    enum RoundingMode {
-      rmInvalid,
-      rmDynamic,
-      rmToNearest,
-      rmDownward,
-      rmUpward,
-      rmTowardZero
-    };
-
-    enum ExceptionBehavior {
-      ebInvalid,
-      ebIgnore,
-      ebMayTrap,
-      ebStrict
-    };
-
     bool isUnaryOp() const;
     bool isTernaryOp() const;
     RoundingMode getRoundingMode() const;

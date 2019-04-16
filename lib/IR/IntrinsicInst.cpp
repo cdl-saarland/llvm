@@ -103,39 +103,52 @@ Value *InstrProfIncrementInst::getStep() const {
   return ConstantInt::get(Type::getInt64Ty(Context), 1);
 }
 
-ConstrainedFPIntrinsic::RoundingMode
-ConstrainedFPIntrinsic::getRoundingMode() const {
-  unsigned NumOperands = getNumArgOperands();
-  Metadata *MD =
-      dyn_cast<MetadataAsValue>(getArgOperand(NumOperands - 2))->getMetadata();
-  if (!MD || !isa<MDString>(MD))
-    return rmInvalid;
-  StringRef RoundingArg = cast<MDString>(MD)->getString();
-
+static
+RoundingMode
+DecodeRoundingMode(StringRef RoundingArg) {
   // For dynamic rounding mode, we use round to nearest but we will set the
   // 'exact' SDNodeFlag so that the value will not be rounded.
   return StringSwitch<RoundingMode>(RoundingArg)
-    .Case("round.dynamic",    rmDynamic)
-    .Case("round.tonearest",  rmToNearest)
-    .Case("round.downward",   rmDownward)
-    .Case("round.upward",     rmUpward)
-    .Case("round.towardzero", rmTowardZero)
-    .Default(rmInvalid);
+    .Case("round.dynamic",    RoundingMode::rmDynamic)
+    .Case("round.tonearest",  RoundingMode::rmToNearest)
+    .Case("round.downward",   RoundingMode::rmDownward)
+    .Case("round.upward",     RoundingMode::rmUpward)
+    .Case("round.towardzero", RoundingMode::rmTowardZero)
+    .Default(RoundingMode::rmInvalid);
 }
 
-ConstrainedFPIntrinsic::ExceptionBehavior
+static
+ExceptionBehavior
+DecodeExceptionBehavior(StringRef ExceptionArg) {
+  return StringSwitch<ExceptionBehavior>(ExceptionArg)
+    .Case("fpexcept.ignore",  ExceptionBehavior::ebIgnore)
+    .Case("fpexcept.maytrap", ExceptionBehavior::ebMayTrap)
+    .Case("fpexcept.strict",  ExceptionBehavior::ebStrict)
+    .Default(ExceptionBehavior::ebInvalid);
+}
+
+RoundingMode
+ConstrainedFPIntrinsic::getRoundingMode() const {
+  unsigned NumOperands = getNumArgOperands();
+  assert(NumOperands >= 2 && "underflow");
+  Metadata *MD =
+      dyn_cast<MetadataAsValue>(getArgOperand(NumOperands - 2))->getMetadata();
+  if (!MD || !isa<MDString>(MD))
+    return RoundingMode::rmInvalid;
+  StringRef RoundingArg = cast<MDString>(MD)->getString();
+  return DecodeRoundingMode(RoundingArg);
+}
+
+ExceptionBehavior
 ConstrainedFPIntrinsic::getExceptionBehavior() const {
   unsigned NumOperands = getNumArgOperands();
+  assert(NumOperands >= 1 && "underflow");
   Metadata *MD =
       dyn_cast<MetadataAsValue>(getArgOperand(NumOperands - 1))->getMetadata();
   if (!MD || !isa<MDString>(MD))
-    return ebInvalid;
+    return ExceptionBehavior::ebInvalid;
   StringRef ExceptionArg = cast<MDString>(MD)->getString();
-  return StringSwitch<ExceptionBehavior>(ExceptionArg)
-    .Case("fpexcept.ignore",  ebIgnore)
-    .Case("fpexcept.maytrap", ebMayTrap)
-    .Case("fpexcept.strict",  ebStrict)
-    .Default(ebInvalid);
+  return DecodeExceptionBehavior(ExceptionArg);
 }
 
 CmpInst::Predicate
@@ -143,28 +156,72 @@ VPIntrinsic::getCmpPredicate() const {
   return static_cast<CmpInst::Predicate>(cast<ConstantInt>(getArgOperand(4))->getZExtValue());
 }
 
+RoundingMode
+VPIntrinsic::getRoundingMode() const {
+  unsigned NumOperands = getNumArgOperands();
+  assert(NumOperands >= 4 && "underflow");
+  Metadata *MD =
+      dyn_cast<MetadataAsValue>(getArgOperand(NumOperands - 4))->getMetadata();
+  if (!MD || !isa<MDString>(MD))
+    return RoundingMode::rmInvalid;
+  StringRef RoundingArg = cast<MDString>(MD)->getString();
+  return DecodeRoundingMode(RoundingArg);
+}
+
+ExceptionBehavior
+VPIntrinsic::getExceptionBehavior() const {
+  unsigned NumOperands = getNumArgOperands();
+  assert(NumOperands >= 3 && "underflow");
+  Metadata *MD =
+      dyn_cast<MetadataAsValue>(getArgOperand(NumOperands - 3))->getMetadata();
+  if (!MD || !isa<MDString>(MD))
+    return ExceptionBehavior::ebInvalid;
+  StringRef ExceptionArg = cast<MDString>(MD)->getString();
+  return DecodeExceptionBehavior(ExceptionArg);
+}
+
 bool VPIntrinsic::isUnaryOp() const {
   switch (getIntrinsicID()) {
     default:
       return false;
     case Intrinsic::vp_fneg:
+    case Intrinsic::vp_constrained_sin:
+    case Intrinsic::vp_constrained_cos:
+    case Intrinsic::vp_constrained_exp:
+    case Intrinsic::vp_constrained_exp2:
+    case Intrinsic::vp_constrained_log:
+    case Intrinsic::vp_constrained_log10:
+    case Intrinsic::vp_constrained_log2:
+    case Intrinsic::vp_constrained_sqrt:
+    case Intrinsic::vp_constrained_ceil:
+    case Intrinsic::vp_constrained_floor:
+    case Intrinsic::vp_constrained_round:
+    case Intrinsic::vp_constrained_trunc:
+    case Intrinsic::vp_constrained_rint:
+    case Intrinsic::vp_constrained_nearbyint:
       return true;
   }
 }
 
 Value*
 VPIntrinsic::getMask() const {
-  if (isBinaryOp()) { return getArgOperand(2); }
-  else if (isTernaryOp()) { return getArgOperand(3); }
-  else if (isUnaryOp()) { return getArgOperand(1); }
+  int offset = 0;
+  if (isConstrainedOp()) offset += 2; // skip rounding, exception args
+
+  if (isBinaryOp()) { return getArgOperand(offset + 2); }
+  else if (isTernaryOp()) { return getArgOperand(offset + 3); }
+  else if (isUnaryOp()) { return getArgOperand(offset + 1); }
   else return nullptr;
 }
 
 Value*
 VPIntrinsic::getVectorLength() const {
-  if (isBinaryOp()) { return getArgOperand(3); }
-  else if (isTernaryOp()) { return getArgOperand(4); }
-  else if (isUnaryOp()) { return getArgOperand(2); }
+  int offset = 0;
+  if (isConstrainedOp()) offset += 2; // skip rounding, exception args
+
+  if (isBinaryOp()) { return getArgOperand(offset + 3); }
+  else if (isTernaryOp()) { return getArgOperand(offset + 4); }
+  else if (isUnaryOp()) { return getArgOperand(offset + 2); }
   else return nullptr;
 }
 
@@ -193,6 +250,38 @@ bool VPIntrinsic::isReductionOp() const {
   }
 }
 
+bool VPIntrinsic::isConstrainedOp() const {
+  switch (getIntrinsicID()) {
+    default:
+      return false;
+
+    case Intrinsic::vp_constrained_fadd:
+    case Intrinsic::vp_constrained_fsub:
+    case Intrinsic::vp_constrained_fmul:
+    case Intrinsic::vp_constrained_fdiv:
+    case Intrinsic::vp_constrained_frem:
+    case Intrinsic::vp_constrained_fma:
+    case Intrinsic::vp_constrained_sqrt:
+    case Intrinsic::vp_constrained_pow:
+    case Intrinsic::vp_constrained_powi:
+    case Intrinsic::vp_constrained_sin:
+    case Intrinsic::vp_constrained_cos:
+    case Intrinsic::vp_constrained_exp:
+    case Intrinsic::vp_constrained_exp2:
+    case Intrinsic::vp_constrained_log:
+    case Intrinsic::vp_constrained_log10:
+    case Intrinsic::vp_constrained_log2:
+    case Intrinsic::vp_constrained_rint:
+    case Intrinsic::vp_constrained_nearbyint:
+    case Intrinsic::vp_constrained_maxnum:
+    case Intrinsic::vp_constrained_minnum:
+    case Intrinsic::vp_constrained_ceil:
+    case Intrinsic::vp_constrained_floor:
+    case Intrinsic::vp_constrained_round:
+    case Intrinsic::vp_constrained_trunc:
+      return true;
+  }
+}
 
 bool VPIntrinsic::isBinaryOp() const {
   switch (getIntrinsicID()) {
@@ -233,6 +322,17 @@ bool VPIntrinsic::isBinaryOp() const {
     case Intrinsic::vp_sdiv:
     case Intrinsic::vp_urem:
     case Intrinsic::vp_srem:
+
+    case Intrinsic::vp_constrained_fadd:
+    case Intrinsic::vp_constrained_fsub:
+    case Intrinsic::vp_constrained_fmul:
+    case Intrinsic::vp_constrained_fdiv:
+    case Intrinsic::vp_constrained_frem:
+    case Intrinsic::vp_constrained_pow:
+    case Intrinsic::vp_constrained_powi:
+    case Intrinsic::vp_constrained_maxnum:
+    case Intrinsic::vp_constrained_minnum:
+
       return true;
   }
 }
@@ -241,15 +341,56 @@ bool VPIntrinsic::isTernaryOp() const {
   switch (getIntrinsicID()) {
     default:
       return false;
-    case Intrinsic::vp_fma:
+    case Intrinsic::vp_compose:
     case Intrinsic::vp_select:
+    case Intrinsic::vp_fma:
+    case Intrinsic::experimental_constrained_fma:
       return true;
+  }
+}
+
+VPIntrinsic::VPIntrinsicDesc
+VPIntrinsic::GetVPDescForIntrinsic(unsigned IntrinsicID) {
+  switch (IntrinsicID) {
+  default:
+    return VPIntrinsicDesc{Intrinsic::not_intrinsic, TypeTokenVec(), -1, -1};
+
+  // llvm.experimental.constrained.*
+  case Intrinsic::experimental_constrained_cos: return VPIntrinsicDesc{ Intrinsic::vp_constrained_cos, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_sin: return VPIntrinsicDesc{ Intrinsic::vp_constrained_sin, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_exp: return VPIntrinsicDesc{ Intrinsic::vp_constrained_exp, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_exp2: return VPIntrinsicDesc{ Intrinsic::vp_constrained_exp2, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_log: return VPIntrinsicDesc{ Intrinsic::vp_constrained_log, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_log2: return VPIntrinsicDesc{ Intrinsic::vp_constrained_log2, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_log10: return VPIntrinsicDesc{ Intrinsic::vp_constrained_log10, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_sqrt: return VPIntrinsicDesc{ Intrinsic::vp_constrained_sqrt, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_ceil: return VPIntrinsicDesc{ Intrinsic::vp_constrained_ceil, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_floor: return VPIntrinsicDesc{ Intrinsic::vp_constrained_floor, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_round: return VPIntrinsicDesc{ Intrinsic::vp_constrained_round, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_trunc: return VPIntrinsicDesc{ Intrinsic::vp_constrained_trunc, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_rint: return VPIntrinsicDesc{ Intrinsic::vp_constrained_rint, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+  case Intrinsic::experimental_constrained_nearbyint: return VPIntrinsicDesc{ Intrinsic::vp_constrained_nearbyint, TypeTokenVec{VPTypeToken::Vector}, 3, 4}; break;
+
+  case Intrinsic::experimental_constrained_fadd: return VPIntrinsicDesc{ Intrinsic::vp_constrained_fadd, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_fsub: return VPIntrinsicDesc{ Intrinsic::vp_constrained_fsub, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_fmul: return VPIntrinsicDesc{ Intrinsic::vp_constrained_fmul, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_fdiv: return VPIntrinsicDesc{ Intrinsic::vp_constrained_fdiv, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_frem: return VPIntrinsicDesc{ Intrinsic::vp_constrained_frem, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_pow: return VPIntrinsicDesc{ Intrinsic::vp_constrained_pow, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_powi: return VPIntrinsicDesc{ Intrinsic::vp_constrained_powi, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_maxnum: return VPIntrinsicDesc{ Intrinsic::vp_constrained_maxnum, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+  case Intrinsic::experimental_constrained_minnum: return VPIntrinsicDesc{ Intrinsic::vp_constrained_minnum, TypeTokenVec{VPTypeToken::Vector}, 4, 5}; break;
+
+  case Intrinsic::experimental_constrained_fma: return VPIntrinsicDesc{ Intrinsic::vp_constrained_fma, TypeTokenVec{VPTypeToken::Vector}, 5, 6}; break;
   }
 }
 
 VPIntrinsic::VPIntrinsicDesc
 VPIntrinsic::GetVPIntrinsicDesc(unsigned OC) {
   switch (OC) {
+  default:
+    return VPIntrinsicDesc{Intrinsic::not_intrinsic, TypeTokenVec(), -1, -1};
+
     // fp unary
     case Instruction::FNeg: return VPIntrinsicDesc{ Intrinsic::vp_fneg, TypeTokenVec{VPTypeToken::Vector}, 1, 2}; break;
 
@@ -284,9 +425,6 @@ VPIntrinsic::GetVPIntrinsicDesc(unsigned OC) {
     case Instruction::ICmp:
     case Instruction::FCmp:
       return VPIntrinsicDesc{ Intrinsic::vp_cmp, TypeTokenVec{VPTypeToken::Mask, VPTypeToken::Vector}, 2, 3}; break;
-
-  default:
-    return VPIntrinsicDesc{Intrinsic::not_intrinsic, TypeTokenVec(), -1, -1};
   }
 }
 
