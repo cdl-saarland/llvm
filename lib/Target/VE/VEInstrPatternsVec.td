@@ -212,6 +212,10 @@ def : Pat<(v256i32 (zext v256i1:$vm)),
 def : Pat<(v256i64 (zext v256i1:$vm)),
           (VMRGim 0, (VBRDi 1, 256), $vm, 256)>;
 
+// truncate
+
+def : Pat <(v256i32 (trunc v256i64:$vx)), (VANDlv $vx, $vx, (COPY_TO_REGCLASS (LEAzzi 256), VLS))>;
+
 // Bitconvert for mask registers between
 // v256i64 and v256f64.
 
@@ -694,7 +698,7 @@ def : Pat<(xor v512i1:$vy, v512i1:$vz), (XORMp v512i1:$vy, v512i1:$vz)>;
 
 
 // Horizontal mask operations
-def : Pat<(vec_popcount v256i1:$vy, i32:$vl),
+def : Pat<(vec_popcount v256i1:$vy, i64:$vl),
               (PCVM v256i1:$vy, 
               (COPY_TO_REGCLASS $vl, VLS))>;
 

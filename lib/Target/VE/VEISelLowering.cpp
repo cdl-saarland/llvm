@@ -637,7 +637,7 @@ VETargetLowering::LowerVECREDUCE(SDValue Op, SelectionDAG &DAG) const {
 
   SDLoc dl(Op);
 
-  auto AVL = DAG.getConstant(256, dl, MVT::i32);
+  auto AVL = DAG.getConstant(256, dl, MVT::i64);
 
   SDValue Result;
   switch (Op->getOpcode()) {
