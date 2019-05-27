@@ -1,9 +1,8 @@
 //===-- VEISelDAGToDAG.cpp - A dag to dag inst selector for VE ------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -102,6 +101,15 @@ bool VEDAGToDAGISel::SelectADDRri(SDValue Addr,
         return true;
       }
     }
+#if 0
+    // Disable ADDRri optimization to combine VEISD::Lo and ADDri instruction
+    // since following instruction works if and only if data section is
+    // smaller than 2GB.
+    //
+    //   LEASL %var1, sym@hi
+    //   LD    %var2, sym@lo(%var1)   ; this uses SEXT(sym@lo), so sym@lo
+    //                                ; must be lower than 2GB (0x80000000)
+
     if (Addr.getOperand(0).getOpcode() == VEISD::Lo) {
       Base = Addr.getOperand(1);
       Offset = Addr.getOperand(0).getOperand(0);
@@ -112,6 +120,7 @@ bool VEDAGToDAGISel::SelectADDRri(SDValue Addr,
       Offset = Addr.getOperand(1).getOperand(0);
       return true;
     }
+#endif
   }
   Base = Addr;
   Offset = CurDAG->getTargetConstant(0, SDLoc(Addr), MVT::i32);

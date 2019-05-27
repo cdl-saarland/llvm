@@ -1,9 +1,8 @@
 //===-- VEFrameLowering.cpp - VE Frame Information ------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -432,15 +431,16 @@ static void addScavengingSlotFor(RegScavenger* RS,
 }
 
 void VEFrameLowering::determineCalleeSaves(MachineFunction &MF,
-                                              BitVector &SavedRegs,
-                                              RegScavenger *RS) const {
+                                           BitVector &SavedRegs,
+                                           RegScavenger *RS) const {
   TargetFrameLowering::determineCalleeSaves(MF, SavedRegs, RS);
   // If we use VL in this function, create an emergency spill slot for VL.
   if (MF.getRegInfo().isPhysRegUsed(VE::VL)) {
     MachineFrameInfo &MFI = MF.getFrameInfo();
     const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
-    // We need emergency slots for one VLS and one I64 register class since
-    // we use both in replaceFI function.
+    // We need several emergency slots:
+    //    one VLS for spill/restore V64 registers (for implicitly using VL)
+    //    one I64 for spill/restore V64 registers (for address calculation)
     addScavengingSlotFor(RS, VE::VLSRegClass, *TRI, MFI);
     addScavengingSlotFor(RS, VE::I64RegClass, *TRI, MFI);
   }

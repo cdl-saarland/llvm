@@ -1,9 +1,8 @@
 //===-- VEAsmPrinter.cpp - VE LLVM assembly writer ------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -63,11 +62,9 @@ namespace {
     }
 
     bool PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
-                         unsigned AsmVariant, const char *ExtraCode,
-                         raw_ostream &O) override;
+                         const char *ExtraCode, raw_ostream &O) override;
     bool PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
-                               unsigned AsmVariant, const char *ExtraCode,
-                               raw_ostream &O) override;
+                               const char *ExtraCode, raw_ostream &O) override;
 
     void LowerGETGOTAndEmitMCInsts(const MachineInstr *MI,
                                    const MCSubtargetInfo &STI);
@@ -516,17 +513,17 @@ void VEAsmPrinter::LowerV2VMAndEmitMCInsts(
 void VEAsmPrinter::LowerVMP2VAndEmitMCInsts(
     const MachineInstr *MI, const MCSubtargetInfo &STI) {
   // FIXME: using sx16 as a temporary register.
-  // SVMi %sx16, $src, i
-  // LSVi $dest, $dest, i, %sx16        x 4
   // SVMi %sx16, $src+1, i
+  // LSVi $dest, $dest, i, %sx16        x 4
+  // SVMi %sx16, $src, i
   // LSVi $dest, $dest, i+4, %sx16      x 4
 
   unsigned DestReg = MI->getOperand(0).getReg();
   unsigned SrcReg = MI->getOperand(1).getReg();
   const MachineFunction &MF = *MI->getParent()->getParent();
   const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
-  unsigned SrcRegLo = TRI->getSubReg(SrcReg, VE::sub_vm_even);
-  unsigned SrcRegHi = TRI->getSubReg(SrcReg, VE::sub_vm_odd);
+  unsigned SrcRegLo = TRI->getSubReg(SrcReg, VE::sub_vm_odd);
+  unsigned SrcRegHi = TRI->getSubReg(SrcReg, VE::sub_vm_even);
 
   for (int i = 0; i < 4; ++i) {
     EmitToStreamer(*OutStreamer, MCInstBuilder(VE::SVMi)
@@ -556,16 +553,16 @@ void VEAsmPrinter::LowerV2VMPAndEmitMCInsts(
     const MachineInstr *MI, const MCSubtargetInfo &STI) {
   // FIXME: using sx16 as a temporary register.
   // LVSi %sx16, $src, i
-  // LVMi $dest, $dest, i, %sx16        x 4
+  // LVMi $dest+1, $dest+1, i, %sx16        x 4
   // LVSi %sx16, $src, i+4
-  // LVMi $dest+1, $dest+1, i, %sx16    x 4
+  // LVMi $dest, $dest, i, %sx16    x 4
 
   unsigned DestReg = MI->getOperand(0).getReg();
   unsigned SrcReg = MI->getOperand(1).getReg();
   const MachineFunction &MF = *MI->getParent()->getParent();
   const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
-  unsigned DestRegLo = TRI->getSubReg(DestReg, VE::sub_vm_even);
-  unsigned DestRegHi = TRI->getSubReg(DestReg, VE::sub_vm_odd);
+  unsigned DestRegLo = TRI->getSubReg(DestReg, VE::sub_vm_odd);
+  unsigned DestRegHi = TRI->getSubReg(DestReg, VE::sub_vm_even);
 
   for (int i = 0; i < 4; ++i) {
     EmitToStreamer(*OutStreamer, MCInstBuilder(VE::LVSi)
@@ -796,16 +793,15 @@ void VEAsmPrinter::printMemASOperand(const MachineInstr *MI, int opNum,
 /// PrintAsmOperand - Print out an operand for an inline asm expression.
 ///
 bool VEAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
-                                      unsigned AsmVariant,
-                                      const char *ExtraCode,
-                                      raw_ostream &O) {
+                                   const char *ExtraCode,
+                                   raw_ostream &O) {
   if (ExtraCode && ExtraCode[0]) {
     if (ExtraCode[1] != 0) return true; // Unknown modifier.
 
     switch (ExtraCode[0]) {
     default:
       // See if this is a generic print operand
-      return AsmPrinter::PrintAsmOperand(MI, OpNo, AsmVariant, ExtraCode, O);
+      return AsmPrinter::PrintAsmOperand(MI, OpNo, ExtraCode, O);
     case 'f':
     case 'r':
      break;
@@ -817,10 +813,9 @@ bool VEAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,
   return false;
 }
 
-bool VEAsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI,
-                                            unsigned OpNo, unsigned AsmVariant,
-                                            const char *ExtraCode,
-                                            raw_ostream &O) {
+bool VEAsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
+                                         const char *ExtraCode,
+                                         raw_ostream &O) {
   if (ExtraCode && ExtraCode[0])
     return true;  // Unknown modifier
 

@@ -62,46 +62,37 @@ def truncstorev2i32 : PatFrag<(ops node:$val, node:$ptr),
 // Load and store for
 // v256i32, v256i64, v512i32, v256f32, v256f64, v512f32.
 
-def : Pat<(v512i32 (load ADDRri:$addr)),
-          (v512i32 (VLDir 8, (LEAasx ADDRri:$addr),
-                          (COPY_TO_REGCLASS (LEAzzi 256), VLS)))>;
+def : Pat<(v512i32 (load I64:$addr)),
+          (v512i32 (VLDir 8, $addr, (COPY_TO_REGCLASS (LEAzzi 256), VLS)))>;
 
-def : Pat<(v512f32 (load ADDRri:$addr)),
-          (v512f32 (VLDir 8, (LEAasx ADDRri:$addr),
-                          (COPY_TO_REGCLASS (LEAzzi 256), VLS)))>;
+def : Pat<(v512f32 (load I64:$addr)),
+          (v512f32 (VLDir 8, $addr, (COPY_TO_REGCLASS (LEAzzi 256), VLS)))>;
 
 multiclass load_for_vector_length<int length> {
   def : Pat<(!cast<ValueType>("v" # !cast<string>(length) # "i32")
-              (load ADDRri:$addr)),
-            (VLDLsxir 4, (LEAasx ADDRri:$addr),
-                         (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+              (load I64:$addr)),
+            (VLDLsxir 4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(!cast<ValueType>("v" # !cast<string>(length) # "f32")
-              (load ADDRri:$addr)),
-            (VLDUir 4, (LEAasx ADDRri:$addr),
-                       (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+              (load I64:$addr)),
+            (VLDUir 4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(!cast<ValueType>("v" # !cast<string>(length) # "f64")
-              (load ADDRri:$addr)),
-            (VLDir 8, (LEAasx ADDRri:$addr),
-                      (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+              (load I64:$addr)),
+            (VLDir 8, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(!cast<ValueType>("v" # !cast<string>(length) # "i64")
-              (load ADDRri:$addr)),
-            (VLDir 8, (LEAasx ADDRri:$addr),
-                      (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+              (load I64:$addr)),
+            (VLDir 8, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(!cast<ValueType>("v" # !cast<string>(length) # "i64")
               (!cast<PatFrag>("extloadv" # !cast<string>(length) # "i32")
-                 ADDRri:$addr)),
-            (VLDLzxir 4, (LEAasx ADDRri:$addr),
-                    (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+                 I64:$addr)),
+            (VLDLzxir 4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(!cast<ValueType>("v" # !cast<string>(length) # "i64")
               (!cast<PatFrag>("sextloadv" # !cast<string>(length) # "i32")
-                 ADDRri:$addr)),
-            (VLDLsxir 4, (LEAasx ADDRri:$addr),
-                    (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+                 I64:$addr)),
+            (VLDLsxir 4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(!cast<ValueType>("v" # !cast<string>(length) # "i64")
               (!cast<PatFrag>("zextloadv" # !cast<string>(length) # "i32")
-                 ADDRri:$addr)),
-            (VLDLzxir 4, (LEAasx ADDRri:$addr),
-                    (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+                 I64:$addr)),
+            (VLDLzxir 4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
 }
 
 defm : load_for_vector_length<256>;
@@ -109,47 +100,71 @@ defm : load_for_vector_length<8>;
 defm : load_for_vector_length<4>;
 defm : load_for_vector_length<2>;
 
-def : Pat<(store v512i32:$vx, ADDRri:$addr),
-          (VSTir v512i32:$vx, 8, (LEAasx ADDRri:$addr),
-                 (COPY_TO_REGCLASS (LEAzzi 256), VLS))>;
+def : Pat<(store v512i32:$vx, I64:$addr),
+          (VSTir v512i32:$vx, 8, $addr, (COPY_TO_REGCLASS (LEAzzi 256), VLS))>;
 
-def : Pat<(store v512f32:$vx, ADDRri:$addr),
-          (VSTir v512f32:$vx, 8, (LEAasx ADDRri:$addr),
-                 (COPY_TO_REGCLASS (LEAzzi 256), VLS))>;
+def : Pat<(store v512f32:$vx, I64:$addr),
+          (VSTir v512f32:$vx, 8, $addr, (COPY_TO_REGCLASS (LEAzzi 256), VLS))>;
 
 multiclass store_for_vector_length<int length> {
   def : Pat<(store !cast<ValueType>("v" # !cast<string>(length) # "i32"):$vx,
-                   ADDRri:$addr),
+                   I64:$addr),
             (VSTLir !cast<ValueType>("v" # !cast<string>(length) # "i32"):$vx,
-                    4, (LEAasx ADDRri:$addr),
-                    (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+                    4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(store !cast<ValueType>("v" # !cast<string>(length) # "f32"):$vx,
-                   ADDRri:$addr),
+                   I64:$addr),
             (VSTUir !cast<ValueType>("v" # !cast<string>(length) # "f32"):$vx,
-                    4, (LEAasx ADDRri:$addr),
-                    (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+                    4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(store !cast<ValueType>("v" # !cast<string>(length) # "f64"):$vx,
-                   ADDRri:$addr),
+                   I64:$addr),
             (VSTir !cast<ValueType>("v" # !cast<string>(length) # "f64"):$vx,
-                    8, (LEAasx ADDRri:$addr),
-                   (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+                    8, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(store !cast<ValueType>("v" # !cast<string>(length) # "i64"):$vx,
-                   ADDRri:$addr),
+                   I64:$addr),
             (VSTir !cast<ValueType>("v" # !cast<string>(length) # "i64"):$vx,
-                    8, (LEAasx ADDRri:$addr),
-                   (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
+                    8, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
   def : Pat<(!cast<PatFrag>("truncstorev" # !cast<string>(length) # "i32")
                !cast<ValueType>("v" # !cast<string>(length) # "i64"):$vx,
-               ADDRri:$addr),
-            (VSTLir $vx, 4, (LEAasx ADDRri:$addr),
-                    (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
-
+               I64:$addr),
+            (VSTLir $vx, 4, $addr, (COPY_TO_REGCLASS (LEAzzi length), VLS))>;
 }
 
 defm : store_for_vector_length<256>;
 defm : store_for_vector_length<8>;
 defm : store_for_vector_length<4>;
 defm : store_for_vector_length<2>;
+
+// Load for
+// v256i1, v512i1
+
+def : Pat<(v256i1 (load I64:$addr)),
+          (v256i1 (LVMi (LVMi (LVMi (LVMi (v256i1 (IMPLICIT_DEF)), 
+                      0, (LDSri $addr, 0)),
+                      1, (LDSri $addr, 8)),
+                      2, (LDSri $addr, 16)),
+                      3, (LDSri $addr, 24)))>;
+
+def : Pat<(v512i1 (load I64:$addr)),
+          (v512i1 (LVMpi (LVMpi (LVMpi (LVMpi
+                  (LVMpi (LVMpi (LVMpi (LVMpi (v512i1 (IMPLICIT_DEF)), 
+                      0, (LDSri $addr, 0)),
+                      1, (LDSri $addr, 8)),
+                      2, (LDSri $addr, 16)),
+                      3, (LDSri $addr, 24)),
+                      4, (LDSri $addr, 32)),
+                      5, (LDSri $addr, 40)),
+                      6, (LDSri $addr, 48)),
+                      7, (LDSri $addr, 56)))>;
+
+// Store for v256i1, v512i1 are implemented in 2 ways.  These STVM/STVM512
+// pseudo instruction is used for frameindex related load/store instructions.
+// Custom Lowering is used for other load/store instructions.
+
+def : Pat<(store v256i1:$vx, ADDRri:$addr),
+          (STVMri ADDRri:$addr, $vx)>;
+
+def : Pat<(store v512i1:$vx, ADDRri:$addr),
+          (STVM512ri ADDRri:$addr, $vx)>;
 
 // Format Conversions
 
@@ -171,7 +186,9 @@ multiclass i2f_for_vector_length<int length, ValueType vi32, ValueType vi64,
 defm : i2f_for_vector_length<256, v256i32, v256i64, v256f32, v256f64>;
 defm : i2f_for_vector_length<8, v8i32, v8i64, v8f32, v8f64>;
 defm : i2f_for_vector_length<4, v4i32, v4i64, v4f32, v4f64>;
-defm : i2f_for_vector_length<2, v2i32, v2i64, v2f32, v2f64>;
+// FIXME: tblgen produces errors on following pattern.  It is not
+// possible to fix erros at the moment.
+// defm : i2f_for_vector_length<2, v2i32, v2i64, v2f32, v2f64>;
 
 // sext and zext
 // FIXME: we may need anyext too.
@@ -187,7 +204,7 @@ defm : ext_for_vector_length<256, v256i32, v256i64>;
 defm : ext_for_vector_length<8, v8i32, v8i64>;
 defm : ext_for_vector_length<4, v4i32, v4i64>;
 // FIXME: tblgen produces errors on following pattern.  It is not
-// possible to fix erros and use following pattern.
+// possible to fix erros at the moment.
 // defm : ext_for_vector_length<2, v2i32, v2i64>;
 
 def : Pat<(v256i32 (zext v256i1:$vm)),

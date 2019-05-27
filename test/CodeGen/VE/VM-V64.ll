@@ -7,8 +7,10 @@
 define void @VM256V64_test1() {
 ; ENABLE-LABEL:   VM256V64_test1:
 ; ENABLE:         .LBB{{[0-9]+}}_2:
-; ENABLE-NEXT:      lea.sl %s34, pIn@hi
-; ENABLE-NEXT:      ld %s34, pIn@lo(,%s34)
+; ENABLE-NEXT:      lea %s34, pIn@lo
+; ENABLE-NEXT:      and %s34, %s34, (32)0
+; ENABLE-NEXT:      lea.sl %s34, pIn@hi(%s34)
+; ENABLE-NEXT:      ld %s34, (,%s34)
 ; ENABLE-NEXT:      vldu %v0,4,%s34
 ; ENABLE-NEXT:      vfmk.s.eq %vm1,%v0
 ; ENABLE-NEXT:      nndm %vm1,%vm1,%vm1
@@ -16,8 +18,10 @@ define void @VM256V64_test1() {
 ; ENABLE-NEXT:      vstl %v0,4,%s34
 ; DISABLE-LABEL:  VM256V64_test1:
 ; DISABLE:        .LBB{{[0-9]+}}_2:
-; DISABLE-NEXT:     lea.sl %s34, pIn@hi
-; DISABLE-NEXT:     ld %s34, pIn@lo(,%s34)
+; DISABLE-NEXT:     lea %s34, pIn@lo
+; DISABLE-NEXT:     and %s34, %s34, (32)0
+; DISABLE-NEXT:     lea.sl %s34, pIn@hi(%s34)
+; DISABLE-NEXT:     ld %s34, (,%s34)
 ; DISABLE-NEXT:     vldu %v0,4,%s34
 ; DISABLE-NEXT:     vfmk.s.eq %vm1,%v0
 ; DISABLE-NEXT:     nndm %vm1,%vm1,%vm1
@@ -51,8 +55,10 @@ declare void @llvm.ve.vstl.vss(<256 x double>, i64, i8*)
 define void @VM256V64_test2(i32) {
 ; ENABLE-LABEL:   VM256V64_test2:
 ; ENABLE:         .LBB{{[0-9]+}}_6:
-; ENABLE-NEXT:      lea.sl %s34, pIn@hi
-; ENABLE-NEXT:      ld %s34, pIn@lo(,%s34)
+; ENABLE-NEXT:      lea %s34, pIn@lo
+; ENABLE-NEXT:      and %s34, %s34, (32)0
+; ENABLE-NEXT:      lea.sl %s34, pIn@hi(%s34)
+; ENABLE-NEXT:      ld %s34, (,%s34)
 ; ENABLE-NEXT:      vldu %v0,4,%s34
 ; ENABLE-NEXT:      lea %s35, -1(%s0)
 ; ENABLE-NEXT:      or %s36, 1, (0)1
@@ -69,8 +75,10 @@ define void @VM256V64_test2(i32) {
 ; ENABLE-NEXT:      vstl %v0,4,%s34
 ; DISABLE-LABEL:  VM256V64_test2:
 ; DISABLE:        .LBB{{[0-9]+}}_6:
-; DISABLE-NEXT:     lea.sl %s34, pIn@hi
-; DISABLE-NEXT:     ld %s34, pIn@lo(,%s34)
+; DISABLE-NEXT:     lea %s34, pIn@lo
+; DISABLE-NEXT:     and %s34, %s34, (32)0
+; DISABLE-NEXT:     lea.sl %s34, pIn@hi(%s34)
+; DISABLE-NEXT:     ld %s34, (,%s34)
 ; DISABLE-NEXT:     vldu %v0,4,%s34
 ; DISABLE-NEXT:     vfmk.s.eq %vm1,%v0
 ; DISABLE-NEXT:     lea %s35, -1(%s0)
@@ -113,7 +121,11 @@ define void @VM256V64_test2(i32) {
 ; DISABLE-NEXT:     brgt.w %s35, %s36, .LBB1_3
 ; DISABLE-NEXT:     br.l .LBB1_4
 ; DISABLE:        .LBB{{[0-9]+}}_1:
+; DISABLE-NEXT:     svl %s16
+; DISABLE-NEXT:     lea %s12, 256
+; DISABLE-NEXT:     lvl %s12
 ; DISABLE-NEXT:     vor %v2,(0)1,%v1
+; DISABLE-NEXT:     lvl %s16
 ; DISABLE:        .LBB{{[0-9]+}}_4:
 ; DISABLE-NEXT:     lvs %s16,%v2(0)
 ; DISABLE-NEXT:     lvm %vm1,0,%s16
@@ -148,8 +160,10 @@ define void @VM256V64_test2(i32) {
 define void @VM512V64_test1() {
 ; ENABLE-LABEL:   VM512V64_test1:
 ; ENABLE:         .LBB{{[0-9]+}}_2:
-; ENABLE-NEXT:      lea.sl %s34, pIn@hi
-; ENABLE-NEXT:      ld %s34, pIn@lo(,%s34)
+; ENABLE-NEXT:      lea %s34, pIn@lo
+; ENABLE-NEXT:      and %s34, %s34, (32)0
+; ENABLE-NEXT:      lea.sl %s34, pIn@hi(%s34)
+; ENABLE-NEXT:      ld %s34, (,%s34)
 ; ENABLE-NEXT:      vldu %v0,4,%s34
 ; ENABLE-NEXT:      vfmk.s.eq %vm2,%v0
 ; ENABLE-NEXT:      pvfmk.s.lo.eq %vm3,%v0
@@ -159,8 +173,10 @@ define void @VM512V64_test1() {
 ; ENABLE-NEXT:      vstl %v0,4,%s34
 ; DISABLE-LABEL:  VM512V64_test1:
 ; DISABLE:        .LBB{{[0-9]+}}_2:
-; DISABLE-NEXT:     lea.sl %s34, pIn@hi
-; DISABLE-NEXT:     ld %s34, pIn@lo(,%s34)
+; DISABLE-NEXT:     lea %s34, pIn@lo
+; DISABLE-NEXT:     and %s34, %s34, (32)0
+; DISABLE-NEXT:     lea.sl %s34, pIn@hi(%s34)
+; DISABLE-NEXT:     ld %s34, (,%s34)
 ; DISABLE-NEXT:     vldu %v0,4,%s34
 ; DISABLE-NEXT:     vfmk.s.eq %vm2,%v0
 ; DISABLE-NEXT:     pvfmk.s.lo.eq %vm3,%v0
@@ -190,8 +206,10 @@ declare <256 x double> @llvm.ve.pvadds.vvvMv(<256 x double>, <256 x double>, <8 
 define void @VM512V64_test2(i32) {
 ; ENABLE-LABEL:   VM512V64_test2:
 ; ENABLE:         .LBB{{[0-9]+}}_4:
-; ENABLE-NEXT:      lea.sl %s34, pIn@hi
-; ENABLE-NEXT:      ld %s34, pIn@lo(,%s34)
+; ENABLE-NEXT:      lea %s34, pIn@lo
+; ENABLE-NEXT:      and %s34, %s34, (32)0
+; ENABLE-NEXT:      lea.sl %s34, pIn@hi(%s34)
+; ENABLE-NEXT:      ld %s34, (,%s34)
 ; ENABLE-NEXT:      vldu %v0,4,%s34
 ; ENABLE-NEXT:      vfmk.s.eq %vm4,%v0
 ; ENABLE-NEXT:      pvfmk.s.lo.eq %vm5,%v0
@@ -208,84 +226,86 @@ define void @VM512V64_test2(i32) {
 ; ENABLE-NEXT:      vstl %v0,4,%s34
 ; DISABLE-LABEL:  VM512V64_test2:
 ; DISABLE:        .LBB{{[0-9]+}}_5:
-; DISABLE-NEXT:     lea.sl %s34, pIn@hi
-; DISABLE-NEXT:     ld %s34, pIn@lo(,%s34)
+; DISABLE-NEXT:     lea %s34, pIn@lo
+; DISABLE-NEXT:     and %s34, %s34, (32)0
+; DISABLE-NEXT:     lea.sl %s34, pIn@hi(%s34)
+; DISABLE-NEXT:     ld %s34, (,%s34)
 ; DISABLE-NEXT:     vldu %v0,4,%s34
 ; DISABLE-NEXT:     vfmk.s.eq %vm2,%v0
 ; DISABLE-NEXT:     pvfmk.s.lo.eq %vm3,%v0
 ; DISABLE-NEXT:     nndm %vm4,%vm2,%vm2
 ; DISABLE-NEXT:     nndm %vm5,%vm3,%vm3
 ; DISABLE-NEXT:     or %s35, 1, (0)1
-; DISABLE-NEXT:     svm %s16,%vm4,0
-; DISABLE-NEXT:     lsv %v1(0),%s16
-; DISABLE-NEXT:     svm %s16,%vm4,1
-; DISABLE-NEXT:     lsv %v1(1),%s16
-; DISABLE-NEXT:     svm %s16,%vm4,2
-; DISABLE-NEXT:     lsv %v1(2),%s16
-; DISABLE-NEXT:     svm %s16,%vm4,3
-; DISABLE-NEXT:     lsv %v1(3),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,0
-; DISABLE-NEXT:     lsv %v1(4),%s16
+; DISABLE-NEXT:     lsv %v1(0),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,1
-; DISABLE-NEXT:     lsv %v1(5),%s16
+; DISABLE-NEXT:     lsv %v1(1),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,2
-; DISABLE-NEXT:     lsv %v1(6),%s16
+; DISABLE-NEXT:     lsv %v1(2),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,3
+; DISABLE-NEXT:     lsv %v1(3),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,0
+; DISABLE-NEXT:     lsv %v1(4),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,1
+; DISABLE-NEXT:     lsv %v1(5),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,2
+; DISABLE-NEXT:     lsv %v1(6),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,3
 ; DISABLE-NEXT:     lsv %v1(7),%s16
 ; DISABLE-NEXT:     brlt.w %s0, %s35, .LBB{{[0-9]+}}_3
 ; DISABLE:        .LBB{{[0-9]+}}_2:
 ; DISABLE-NEXT:     lvs %s16,%v1(0)
-; DISABLE-NEXT:     lvm %vm4,0,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(1)
-; DISABLE-NEXT:     lvm %vm4,1,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(2)
-; DISABLE-NEXT:     lvm %vm4,2,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(3)
-; DISABLE-NEXT:     lvm %vm4,3,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(4)
 ; DISABLE-NEXT:     lvm %vm5,0,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(5)
+; DISABLE-NEXT:     lvs %s16,%v1(1)
 ; DISABLE-NEXT:     lvm %vm5,1,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(6)
+; DISABLE-NEXT:     lvs %s16,%v1(2)
 ; DISABLE-NEXT:     lvm %vm5,2,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(7)
+; DISABLE-NEXT:     lvs %s16,%v1(3)
 ; DISABLE-NEXT:     lvm %vm5,3,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(4)
+; DISABLE-NEXT:     lvm %vm4,0,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(5)
+; DISABLE-NEXT:     lvm %vm4,1,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(6)
+; DISABLE-NEXT:     lvm %vm4,2,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(7)
+; DISABLE-NEXT:     lvm %vm4,3,%s16
 ; DISABLE-NEXT:     nndm %vm4,%vm2,%vm4
 ; DISABLE-NEXT:     nndm %vm5,%vm3,%vm5
-; DISABLE-NEXT:     svm %s16,%vm4,0
-; DISABLE-NEXT:     lsv %v1(0),%s16
-; DISABLE-NEXT:     svm %s16,%vm4,1
-; DISABLE-NEXT:     lsv %v1(1),%s16
-; DISABLE-NEXT:     svm %s16,%vm4,2
-; DISABLE-NEXT:     lsv %v1(2),%s16
-; DISABLE-NEXT:     svm %s16,%vm4,3
-; DISABLE-NEXT:     lsv %v1(3),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,0
-; DISABLE-NEXT:     lsv %v1(4),%s16
+; DISABLE-NEXT:     lsv %v1(0),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,1
-; DISABLE-NEXT:     lsv %v1(5),%s16
+; DISABLE-NEXT:     lsv %v1(1),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,2
-; DISABLE-NEXT:     lsv %v1(6),%s16
+; DISABLE-NEXT:     lsv %v1(2),%s16
 ; DISABLE-NEXT:     svm %s16,%vm5,3
+; DISABLE-NEXT:     lsv %v1(3),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,0
+; DISABLE-NEXT:     lsv %v1(4),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,1
+; DISABLE-NEXT:     lsv %v1(5),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,2
+; DISABLE-NEXT:     lsv %v1(6),%s16
+; DISABLE-NEXT:     svm %s16,%vm4,3
 ; DISABLE-NEXT:     lsv %v1(7),%s16
 ; DISABLE-NEXT:     brlt.w %s0, %s35, .LBB{{[0-9]+}}_2
 ; DISABLE:        .LBB{{[0-9]+}}_3:
 ; DISABLE-NEXT:     lvs %s16,%v1(0)
-; DISABLE-NEXT:     lvm %vm2,0,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(1)
-; DISABLE-NEXT:     lvm %vm2,1,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(2)
-; DISABLE-NEXT:     lvm %vm2,2,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(3)
-; DISABLE-NEXT:     lvm %vm2,3,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(4)
 ; DISABLE-NEXT:     lvm %vm3,0,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(5)
+; DISABLE-NEXT:     lvs %s16,%v1(1)
 ; DISABLE-NEXT:     lvm %vm3,1,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(6)
+; DISABLE-NEXT:     lvs %s16,%v1(2)
 ; DISABLE-NEXT:     lvm %vm3,2,%s16
-; DISABLE-NEXT:     lvs %s16,%v1(7)
+; DISABLE-NEXT:     lvs %s16,%v1(3)
 ; DISABLE-NEXT:     lvm %vm3,3,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(4)
+; DISABLE-NEXT:     lvm %vm2,0,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(5)
+; DISABLE-NEXT:     lvm %vm2,1,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(6)
+; DISABLE-NEXT:     lvm %vm2,2,%s16
+; DISABLE-NEXT:     lvs %s16,%v1(7)
+; DISABLE-NEXT:     lvm %vm2,3,%s16
 ; DISABLE-NEXT:     pvadds %v0,%v0,%v0,%vm2
 ; DISABLE-NEXT:     vstl %v0,4,%s34
 ; DISABLE-NEXT:     or %s11, 0, %s9

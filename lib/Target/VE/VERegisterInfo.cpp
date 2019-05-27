@@ -1,9 +1,8 @@
 //===-- VERegisterInfo.cpp - VE Register Information ----------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -386,8 +385,8 @@ VERegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   } else if (MI.getOpcode() == VE::STVM512ri) {
     const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
     unsigned SrcReg   = MI.getOperand(2).getReg();
-    unsigned SrcLoReg = getSubReg(SrcReg, VE::sub_vm_even);
-    unsigned SrcHiReg = getSubReg(SrcReg, VE::sub_vm_odd);
+    unsigned SrcLoReg = getSubReg(SrcReg, VE::sub_vm_odd);
+    unsigned SrcHiReg = getSubReg(SrcReg, VE::sub_vm_even);
     bool isKill = MI.getOperand(2).isKill();
     // FIXME: it would be better to scavenge a register here instead of
     // reserving SX16 all of the time.
@@ -429,8 +428,8 @@ VERegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   } else if (MI.getOpcode() == VE::LDVM512ri) {
     const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
     unsigned DestReg   = MI.getOperand(0).getReg();
-    unsigned DestLoReg = getSubReg(DestReg, VE::sub_vm_even);
-    unsigned DestHiReg = getSubReg(DestReg, VE::sub_vm_odd);
+    unsigned DestLoReg = getSubReg(DestReg, VE::sub_vm_odd);
+    unsigned DestHiReg = getSubReg(DestReg, VE::sub_vm_even);
     // FIXME: it would be better to scavenge a register here instead of
     // reserving SX16 all of the time.
     unsigned TmpReg = VE::SX16;

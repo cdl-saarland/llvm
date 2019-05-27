@@ -1,9 +1,8 @@
 //===-- VERegisterInfo.td - VE Register defs ---------------*- tablegen -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -57,6 +56,10 @@ class VR<bits<7> Enc, string n> : VEReg<Enc, n>;
 // VM - 256-bit wide mask registers
 class VM<bits<7> Enc, string n> : VEReg<Enc, n>;
 
+// Pseudo 512b mask register using two 256b physical mask register.
+// Two 256b mask register has to be sequential and start from even register
+// such as (VM2, VM3). Even register is used for upper(0:31) bit in packed
+// vector instructions, and odd register is used for lower(32:63).
 class VMp<bits<7> Enc, string n, list<Register> subregs> : VEReg<Enc, n> {
   let SubRegs = subregs;
   let SubRegIndices = [sub_vm_even, sub_vm_odd];
@@ -183,3 +186,6 @@ def VMC : RegisterClass<"VE", [v256i1], 64, (sequence "VM%u", 0, 15)>;
 
 def VM512T : RegisterClass<"VE", [v512i1], 64, (add VMP0)>;
 def VM512 : RegisterClass<"VE", [v512i1], 64, (sequence "VMP%u", 1, 7)>;
+
+def VM_ : RegisterClass<"VE", [v256i1, v4i64], 64, (sequence "VM%u", 1, 15)>;
+def VM512_ : RegisterClass<"VE", [v512i1, v8i64], 64, (sequence "VMP%u", 1, 7)>;
