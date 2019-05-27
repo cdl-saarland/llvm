@@ -225,7 +225,7 @@ public:
 
   static BinaryOperator *CreateWithCopiedFlags(BinaryOps Opc,
                                                Value *V1, Value *V2,
-                                               BinaryOperator *CopyBO,
+                                               Instruction *CopyBO,
                                                const Twine &Name = "") {
     BinaryOperator *BO = Create(Opc, V1, V2, Name);
     BO->copyIRFlags(CopyBO);
