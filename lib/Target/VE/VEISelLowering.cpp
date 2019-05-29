@@ -3636,7 +3636,11 @@ SDValue VETargetLowering::LowerEXTRACT_VECTOR_ELT(SDValue Op,
 
   // More involved mask bit extraction
   if (VT.getVectorElementType() == MVT::i1) {
-    errs() << "VE Warning: ExtractELT from v256i1!\n";
+    static bool warned = false;
+    if (!warned) {
+      errs() << "VE performance warning: Slow element extraction from mask register!\n";
+      warned = true;
+    }
     SDLoc dl(Op);
     SDValue zerobrd = DAG.getNode(VEISD::VEC_BROADCAST, dl, MVT::v256i32, {DAG.getConstant(0, dl, MVT::i32)});
     SDValue onebrd = DAG.getNode(VEISD::VEC_BROADCAST, dl, MVT::v256i32, {DAG.getConstant(1, dl, MVT::i32)});
