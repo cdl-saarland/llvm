@@ -54,9 +54,6 @@ static std::string computeDataLayout(const Triple &T) {
   Ret += "-v8192:64:64";
   Ret += "-v16384:64:64";       // for v256f64
 
-  // Vector alignment is 64 bits
-  Ret += "-v8192:32:32";
-
   return Ret;
 }
 
