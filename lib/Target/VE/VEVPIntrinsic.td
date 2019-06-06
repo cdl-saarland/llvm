@@ -16,9 +16,9 @@ class NOOP<dag outs, dag ins> : Instruction {
   let Pattern = [];
 }
 
-def NOOPdm : NOOP<(outs V64:$out), (ins VMC:$m, V64:$in)> { let Constraints = "$out = $in"; }
+def NOOPdm : NOOP<(outs V64:$out), (ins VM:$m, V64:$in)> { let Constraints = "$out = $in"; }
 def NOOPmi : NOOP<(outs VM:$out), (ins I32:$a, VM:$in)> { let Constraints = "$out = $in"; }
-def NOOPmm : NOOP<(outs VM:$out), (ins VMC:$m, VM:$in)> { let Constraints = "$out = $in"; }
+def NOOPmm : NOOP<(outs VM:$out), (ins VM:$m, VM:$in)> { let Constraints = "$out = $in"; }
 
 // Vector Load
 
