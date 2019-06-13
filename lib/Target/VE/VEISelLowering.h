@@ -529,11 +529,8 @@ namespace llvm {
                                     const SDLoc &dl, SelectionDAG &DAG,
                                     SmallVectorImpl<SDValue> &InVals) const;
 
-    SDValue
-      LowerCall(TargetLowering::CallLoweringInfo &CLI,
-                SmallVectorImpl<SDValue> &InVals) const override;
-    SDValue LowerCall_64(TargetLowering::CallLoweringInfo &CLI,
-                         SmallVectorImpl<SDValue> &InVals) const;
+    SDValue LowerCall(TargetLowering::CallLoweringInfo &CLI,
+                      SmallVectorImpl<SDValue> &InVals) const override;
 
     bool CanLowerReturn(CallingConv::ID CallConv, MachineFunction &MF,
                         bool isVarArg,
@@ -543,11 +540,6 @@ namespace llvm {
                         const SmallVectorImpl<ISD::OutputArg> &Outs,
                         const SmallVectorImpl<SDValue> &OutVals,
                         const SDLoc &dl, SelectionDAG &DAG) const override;
-    SDValue LowerReturn_64(SDValue Chain, CallingConv::ID CallConv,
-                           bool IsVarArg,
-                           const SmallVectorImpl<ISD::OutputArg> &Outs,
-                           const SmallVectorImpl<SDValue> &OutVals,
-                           const SDLoc &DL, SelectionDAG &DAG) const;
 
     SDValue LowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerGlobalTLSAddress(SDValue Op, SelectionDAG &DAG) const;
@@ -601,11 +593,20 @@ namespace llvm {
     SDValue LowerEXTRACT_VECTOR_ELT(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerINSERT_VECTOR_ELT(SDValue Op, SelectionDAG &DAG) const;
 
+    bool isFPImmLegal(const APFloat &Imm, EVT VT,
+                      bool ForCodeSize) const override;
+
     bool ShouldShrinkFPConstant(EVT VT) const override {
       // Do not shrink FP constpool if VT == MVT::f128.
       // (ldd, call _Q_fdtoq) is more expensive than two ldds.
       return VT != MVT::f128;
     }
+
+    /// Returns true if the target allows unaligned memory accesses of the
+    /// specified type.
+    bool allowsMisalignedMemoryAccesses(EVT VT, unsigned AddrSpace,
+                                        unsigned Align,
+                                        bool *Fast) const override;
 
     unsigned getJumpTableEncoding() const override;
 
@@ -643,7 +644,8 @@ namespace llvm {
     void finalizeLowering(MachineFunction &MF) const override;
 
   private:
-    bool isFMAFasterThanFMulAndFAdd(EVT VT) const override { return true; }
+    // VE supports only vector FMA
+    bool isFMAFasterThanFMulAndFAdd(EVT VT) const override { return VT.isVector() ? true : false; }
   };
 } // end namespace llvm
 

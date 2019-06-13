@@ -18,13 +18,28 @@ def CC_VE_C_Stack: CallingConv<[
   // F128 are assigned to the stack in 16-byte aligned units
   CCIfType<[f128], CCAssignToStackWithShadow<16, 16, [SX7]>>,
 
+  // float --> need special handling like below.
+  //    0      4
+  //    +------+------+
+  //    | empty| float|
+  //    +------+------+
+  CCIfType<[f32], CCCustom<"allocateFloat">>,
+
   // All of the rest are assigned to the stack in 8-byte aligned units.
   CCAssignToStack<0, 8>
 ]>;
 
 def CC_VE_RegCall : CallingConv<[
   // vector --> generic vector registers
-  CCIfType<[v256i32, v256f32, v512i32, v512f32, v256i64, v256f64],
+  CCIfType<[v2i32,   v2i64,   v2f32,   v2f64,
+            v4i32,   v4i64,   v4f32,   v4f64,
+            v8i32,   v8i64,   v8f32,   v8f64,
+            v16i32,  v16i64,  v16f32,  v16f64,
+            v32i32,  v32i64,  v32f32,  v32f64,
+            v64i32,  v64i64,  v64f32,  v64f64,
+            v128i32, v128i64, v128f32, v128f64,
+            v256i32, v256f32, v256i64, v256f64,
+            v512i32, v512f32],
            CCAssignToReg<[V0, V1, V2, V3, V4, V5, V6, V7]>>,
 
   // vector mask --> generic vector mask registers
@@ -74,16 +89,33 @@ def CC_VE : CallingConv<[
   CCDelegateTo<CC_VE_C_Stack>
 ]>;
 
+// All arguments get passed in stack for varargs function or non-prototyped
+// function.
 def CC_VE2 : CallingConv<[
-  // All arguments get passed in stack for varargs function or non-prototyped
-  // function.
+  // F128 are assigned to the stack in 16-byte aligned units
   CCIfType<[f128], CCAssignToStack<16, 16>>,
+
+  // float --> need special handling like below.
+  //    0      4
+  //    +------+------+
+  //    | empty| float|
+  //    +------+------+
+  CCIfType<[f32], CCCustom<"allocateFloat">>,
+
   CCAssignToStack<0, 8>
 ]>;
 
 def RetCC_VE_RegCall : CallingConv<[
   // vector --> generic vector registers
-  CCIfType<[v256i32, v256f32, v512i32, v512f32, v256i64, v256f64],
+  CCIfType<[v2i32,   v2i64,   v2f32,   v2f64,
+            v4i32,   v4i64,   v4f32,   v4f64,
+            v8i32,   v8i64,   v8f32,   v8f64,
+            v16i32,  v16i64,  v16f32,  v16f64,
+            v32i32,  v32i64,  v32f32,  v32f64,
+            v64i32,  v64i64,  v64f32,  v64f64,
+            v128i32, v128i64, v128f32, v128f64,
+            v256i32, v256f32, v256i64, v256f64,
+            v512i32, v512f32],
            CCAssignToReg<[V0, V1, V2, V3, V4, V5, V6, V7]>>,
 
   // vector mask --> generic vector mask registers

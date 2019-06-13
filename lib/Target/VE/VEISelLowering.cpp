@@ -43,6 +43,28 @@ using namespace llvm;
 // Calling Convention Implementation
 //===----------------------------------------------------------------------===//
 
+static bool allocateFloat(unsigned ValNo, MVT ValVT, MVT LocVT,
+                          CCValAssign::LocInfo LocInfo,
+                          ISD::ArgFlagsTy ArgFlags, CCState &State) {
+  switch (LocVT.SimpleTy) {
+  case MVT::f32: {
+    // Allocate stack like below
+    //    0      4
+    //    +------+------+
+    //    | empty| float|
+    //    +------+------+
+    // Use align=8 for dummy area to align the beginning of these 2 area.
+    State.AllocateStack(4, 8);                      // for empty area
+    // Use align=4 for value to place it at just after the dummy area.
+    unsigned Offset = State.AllocateStack(4, 4);    // for float value area
+    State.addLoc(CCValAssign::getMem(ValNo, ValVT, Offset, LocVT, LocInfo));
+    return true;
+  }
+  default:
+    return false;
+  }
+}
+
 #include "VEGenCallingConv.inc"
 
 bool
@@ -1226,6 +1248,38 @@ VETargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
 // TargetLowering Implementation
 //===----------------------------------------------------------------------===//
 
+/// isFPImmLegal - Returns true if the target can instruction select the
+/// specified FP immediate natively. If false, the legalizer will
+/// materialize the FP immediate as a load from a constant pool.
+bool VETargetLowering::isFPImmLegal(const APFloat &Imm, EVT VT,
+                                     bool ForCodeSize) const {
+  return VT == MVT::f32 || VT == MVT::f64;
+}
+
+/// Determine if the target supports unaligned memory accesses.
+///
+/// This function returns true if the target allows unaligned memory accesses
+/// of the specified type in the given address space. If true, it also returns
+/// whether the unaligned memory access is "fast" in the last argument by
+/// reference. This is used, for example, in situations where an array
+/// copy/move/set is converted to a sequence of store operations. Its use
+/// helps to ensure that such replacements don't generate code that causes an
+/// alignment error (trap) on the target machine.
+bool VETargetLowering::allowsMisalignedMemoryAccesses(EVT VT,
+                                                      unsigned AddrSpace,
+                                                      unsigned Align,
+                                                      bool *Fast) const {
+  // VE requires aligned accesses for vector accesses
+  if (VT.isVector())
+    return false;
+
+  if (Fast) {
+    // It's fast anytime on VE
+    *Fast = true;
+  }
+  return true;
+}
+
 TargetLowering::AtomicExpansionKind VETargetLowering::shouldExpandAtomicRMWInIR(AtomicRMWInst *AI) const {
   if (AI->getOperation() == AtomicRMWInst::Xchg)
     return AtomicExpansionKind::None; // Uses ts1am instruction
@@ -1258,6 +1312,22 @@ VETargetLowering::VETargetLowering(const TargetMachine &TM,
   addRegisterClass(MVT::v256i64, &VE::V64RegClass);
   addRegisterClass(MVT::v256f32, &VE::V64RegClass);
   addRegisterClass(MVT::v256f64, &VE::V64RegClass);
+  addRegisterClass(MVT::v128i32, &VE::V64RegClass);
+  addRegisterClass(MVT::v128i64, &VE::V64RegClass);
+  addRegisterClass(MVT::v128f32, &VE::V64RegClass);
+  addRegisterClass(MVT::v128f64, &VE::V64RegClass);
+  addRegisterClass(MVT::v64i32, &VE::V64RegClass);
+  addRegisterClass(MVT::v64i64, &VE::V64RegClass);
+  addRegisterClass(MVT::v64f32, &VE::V64RegClass);
+  addRegisterClass(MVT::v64f64, &VE::V64RegClass);
+  addRegisterClass(MVT::v32i32, &VE::V64RegClass);
+  addRegisterClass(MVT::v32i64, &VE::V64RegClass);
+  addRegisterClass(MVT::v32f32, &VE::V64RegClass);
+  addRegisterClass(MVT::v32f64, &VE::V64RegClass);
+  addRegisterClass(MVT::v16i32, &VE::V64RegClass);
+  addRegisterClass(MVT::v16i64, &VE::V64RegClass);
+  addRegisterClass(MVT::v16f32, &VE::V64RegClass);
+  addRegisterClass(MVT::v16f64, &VE::V64RegClass);
   addRegisterClass(MVT::v8i32, &VE::V64RegClass);
   addRegisterClass(MVT::v8i64, &VE::V64RegClass);
   addRegisterClass(MVT::v8f32, &VE::V64RegClass);
@@ -1512,15 +1582,9 @@ VETargetLowering::VETargetLowering(const TargetMachine &TM,
 
     if (VT.getVectorElementType() == MVT::i1 ||
         VT.getVectorElementType() == MVT::i8 ||
-        VT.getVectorElementType() == MVT::i16 ||
-        VT.getVectorNumElements() == 16 ||
-        VT.getVectorNumElements() == 32 ||
-        VT.getVectorNumElements() == 64 ||
-        VT.getVectorNumElements() == 128) {
+        VT.getVectorElementType() == MVT::i16) {
       // VE uses vXi1 types but has no generic operations.
       // VE doesn't support vXi8 and vXi16 value types.
-      // LLVM for VE doesn't support whole types (i32/i64/f32/f64) of
-      // each length (16/32/64/128) yet.
       // So, we mark them all as expanded.
 
       // Expand all vector-i8/i16-vector truncstore and extload
@@ -1583,6 +1647,7 @@ VETargetLowering::VETargetLowering(const TargetMachine &TM,
         // unknown "vtInt:  (vt:{ *:[Other] })" errors.
         setOperationAction(ISD::SIGN_EXTEND, VT, Expand);
         setOperationAction(ISD::ZERO_EXTEND, VT, Expand);
+        setOperationAction(ISD::SINT_TO_FP, VT, Expand);
       }
 
       setOperationAction(ISD::SCALAR_TO_VECTOR,   VT, Legal);
@@ -2418,6 +2483,19 @@ static SDValue LowerVAARG(SDValue Op, SelectionDAG &DAG) {
     // Increment the pointer, VAList, by 16 to the next vaarg.
     NextPtr = DAG.getNode(ISD::ADD, DL, PtrVT, VAList,
                           DAG.getIntPtrConstant(16, DL));
+  } else if (VT == MVT::f32) {
+    // float --> need special handling like below.
+    //    0      4
+    //    +------+------+
+    //    | empty| float|
+    //    +------+------+
+    // Increment the pointer, VAList, by 8 to the next vaarg.
+    NextPtr = DAG.getNode(ISD::ADD, DL, PtrVT, VAList,
+                          DAG.getIntPtrConstant(8, DL));
+    // Then, adjust VAList.
+    unsigned InternalOffset = 4;
+    VAList = DAG.getNode(ISD::ADD, DL, PtrVT, VAList,
+                         DAG.getConstant(InternalOffset, DL, PtrVT));
   } else {
     // Increment the pointer, VAList, by 8 to the next vaarg.
     NextPtr = DAG.getNode(ISD::ADD, DL, PtrVT, VAList,
@@ -3490,8 +3568,8 @@ SDValue VETargetLowering::LowerINSERT_VECTOR_ELT(SDValue Op,
     return SDValue();
   }
 
-  // May need to support v4i64 and v8i64, but just ask llvm to expand them.
-  return SDValue();
+  // Insertion is legal for other V64 types.
+  return Op;
 }
 
 SDValue VETargetLowering::LowerVECTOR_SHUFFLE(SDValue Op, SelectionDAG &DAG) const {
@@ -3663,8 +3741,8 @@ SDValue VETargetLowering::LowerEXTRACT_VECTOR_ELT(SDValue Op,
     return SDValue();
   }
 
-  // May need to support v4i64 and v8i64, but just ask llvm to expand them.
-  return SDValue();
+  // Extraction is legal for other V64 types.
+  return Op;
 }
 
 SDValue VETargetLowering::

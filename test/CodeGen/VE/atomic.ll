@@ -406,7 +406,6 @@ define i64 @test_atomic_exchange_8() {
 ; CHECK-NEXT:  and %s34, %s34, (32)0
 ; CHECK-NEXT:  lea.sl %s34, l@hi(%s34)
 ; CHECK-NEXT:  lea %s35, 1886417008
-; CHECK-NEXT:  and %s35, %s35, (32)0
 ; CHECK-NEXT:  lea.sl %s0, 1886417008(%s35)
 ; CHECK-NEXT:  ts1am.l %s0, (%s34), 127
 ; CHECK-NEXT:  fencem 2
@@ -427,7 +426,6 @@ define i128 @test_atomic_exchange_16() {
 ; CHECK-NEXT:  and %s34, %s34, (32)0
 ; CHECK-NEXT:  lea.sl %s0, it@hi(%s34)
 ; CHECK-NEXT:  lea %s34, 1886417008
-; CHECK-NEXT:  and %s34, %s34, (32)0
 ; CHECK-NEXT:  lea.sl %s1, 1886417008(%s34)
 ; CHECK-NEXT:  or %s2, 0, (0)1
 ; CHECK-NEXT:  or %s3, 2, (0)1
@@ -1820,7 +1818,7 @@ define i64 @test_atomic_compare_exchange_8stk(i64, i64) {
 ; CHECK-LABEL: test_atomic_compare_exchange_8stk:
 ; CHECK:       .LBB{{[0-9]+}}_2:
 ; CHECK-NEXT:  fencem 3
-; CHECK-NEXT:  cas.l %s1, 192(%s11), %s0
+; CHECK-NEXT:  cas.l %s1, {{[0-9]+}}(%s11), %s0
 ; CHECK-NEXT:  cmps.l %s34, %s1, %s0
 ; CHECK-NEXT:  or %s35, 0, (0)1
 ; CHECK-NEXT:  fencem 3
@@ -1841,7 +1839,7 @@ define void @test_atomic_clear_8stk() {
 ; CHECK:       .LBB{{[0-9]+}}_2:
 ; CHECK-NEXT:  fencem 3
 ; CHECK-NEXT:  or %s34, 0, (0)1
-; CHECK-NEXT:  st1b %s34, 192(,%s11)
+; CHECK-NEXT:  st1b %s34, {{[0-9]+}}(,%s11)
 ; CHECK-NEXT:  fencem 3
 ; CHECK-NEXT:  or %s11, 0, %s9
 entry:
